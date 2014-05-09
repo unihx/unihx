@@ -22,5 +22,9 @@ using StringTools;
 			if (str.endsWith(".hx"))
 				sources.push(str);
 		}
+		if (sources.length > 0)
+		{
+			trace(sources);
+		}
 	}
 }
