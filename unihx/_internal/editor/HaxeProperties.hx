@@ -8,7 +8,6 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 	/**
 		Here's a cool description
 		@label Some Cool Label
-		@width 10
 	**/
 	public var vec2:Vector2;
 
@@ -17,8 +16,16 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 		@range 10,20,30,40
 		@color #f0f0f0cc
 	**/
-	public var curve:AnimationCurve;
+	public var curve:AnimationCurve = new AnimationCurve();
 
-	public var slider:Slider<Int>;
+	/**
+		A Slider
+	**/
+	public var slider:Slider<Int> = new Slider(1,10,5);
 
+	@:meta(UnityEditor.MenuItem("Window/Haxe Properties"))
+	public static function showWindow()
+	{
+		EditorWindow.GetWindow(cs.Lib.toNativeType(HaxeProperties));
+	}
 }

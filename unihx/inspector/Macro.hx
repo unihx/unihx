@@ -4,13 +4,37 @@ import haxe.macro.Type;
 import haxe.macro.Context.*;
 using haxe.macro.Tools;
 using StringTools;
+using Lambda;
 
 class Macro
 {
 	public static function build():Array<Field>
 	{
-		var fields = getBuildFields();
-		switch ComplexType.TAnonymous(fields).toType() {
+		var fields = getBuildFields(),
+				pos = currentPos();
+		var addedFields = [];
+		var ctorAdded = [],
+				ctor = null;
+
+		for (f in fields)
+		{
+			if (f.name == "new") ctor = f;
+			if (f.access.has(AStatic))
+				continue;
+			switch f.kind {
+				case FVar(t,e):
+					addedFields.push(f);
+					if (e != null)
+					{
+						var ethis = { expr: EField(macro this, f.name), pos:f.pos };
+						ctorAdded.push(macro $ethis = $e);
+						f.kind = FVar(t,null);
+					}
+				case _:
+			}
+		}
+
+		switch ComplexType.TAnonymous(addedFields).toType() {
 			case TAnonymous(f):
 				var f = f.get();
 				var allfields = [],
@@ -19,16 +43,65 @@ class Macro
 				for (cf in fields)
 				{
 					var expr = exprFromType(ethis, fs[cf.name]);
+					if (expr == null)
+						continue;
+
 					changePos(expr,cf.pos);
-					if (expr != null)
-						allfields.push(expr);
+					allfields.push(expr);
 				}
-				var block = { expr:EBlock(allfields), pos:currentPos() };
+				var block = { expr:EBlock(allfields), pos:pos };
 				var td = macro class { public function OnGUI() $block; };
 				fields.push(td.fields[0]);
 			case _: throw "assert";
 		}
+
+		if (ctorAdded.length > 0)
+		{
+			if (ctor == null)
+			{
+				var sup = getSuper(getLocalClass()),
+						block = [],
+						expr = { expr:EBlock(block), pos:pos };
+				var kind = sup == null || sup.length == 0 ? FFun({ args:[], ret:null, expr:expr}) : FFun({ args:[ for (s in sup) { name:s.name, opt:s.opt, type:null } ], ret:null, expr:expr });
+				if (sup != null)
+				{
+					block.push({ expr:ECall(macro super, [ for (s in sup) macro $i{s.name} ]), pos:pos });
+				}
+
+				ctor = { name: "new", access: [APublic], pos:pos, kind:kind };
+				fields.push(ctor);
+			}
+			switch ctor.kind {
+				case FFun(fn):
+					var arr =  null;
+					switch fn.expr {
+						case { expr: EBlock(bl) }:
+							arr = bl;
+						case _:
+							fn.expr = { expr: EBlock( arr = [fn.expr] ), pos: pos };
+					}
+					for (added in ctorAdded)
+						arr.push(added);
+				case _: throw "assert";
+			}
+		}
 		return fields;
+	}
+
+	private static function getSuper(cls:Ref<ClassType>)
+	{
+		var sup = cls.get().superClass;
+		if (sup == null)
+			return null;
+
+		var ctor = sup.t.get().constructor;
+		if (ctor == null)
+			return getSuper(sup.t);
+		return switch ctor.get().type.follow() {
+			case TFun(args,_):
+				args;
+			case _: throw "assert";
+		}
 	}
 
 	public static function changePos(e:Expr,p)
@@ -43,6 +116,7 @@ class Macro
 
 	public static function exprFromType(ethis:Expr, field:ClassField):Expr
 	{
+		if (field == null) return null;
 		var pos = field.pos;
 		var type = follow(field.type),
 				pack = null,
@@ -139,6 +213,8 @@ class Macro
 					case _:
 						throw new Error("Invalid parameter for Slider", pos);
 				}
+			case 'Layer' if (inspector):
+				return macro $ethis = unityeditor.EditorGUILayout.LayerField($guiContent, $ethis, $opts);
 			case _:
 				return null;
 		}

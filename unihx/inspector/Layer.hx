@@ -1,3 +1,9 @@
 package unihx.inspector;
 
-typedef Layer = Int;
+abstract Layer(Int) from Int to Int
+{
+	@:extern inline public function toInt():Int
+	{
+		return this;
+	}
+}
