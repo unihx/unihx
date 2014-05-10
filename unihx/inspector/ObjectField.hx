@@ -1,4 +1,4 @@
 package unihx.inspector;
 
-//@allowSceneObjects
+//@allow-scene-objects
 typedef ObjectField<T> = T;

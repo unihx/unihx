@@ -178,7 +178,10 @@ class Macro
 			macro new unityengine.GUIContent($v{label}, $v{tooltip});
 		}
 
-		var opts = field.doc == null ? macro null : nativeArray(getOptions(docs, field.pos), pos);
+		var opts = field.doc == null ? null : nativeArray(getOptions(docs, field.pos), pos);
+		if (opts == null)
+			opts = macro null;
+			// opts = macro new cs.NativeArray(0);
 
 		switch name {
 			case 'Vector2' if (unity):
@@ -215,6 +218,12 @@ class Macro
 				}
 			case 'Layer' if (inspector):
 				return macro $ethis = unityeditor.EditorGUILayout.LayerField($guiContent, $ethis, $opts);
+			case _ if (field.type.unify( getType("unityengine.Object") )):
+				var allowSceneObjects = parseBool(docs['allow-scene-objects']),
+						type = parse(pack.join(".") + (pack.length == 0 ? name : "." + name),pos);
+				if (allowSceneObjects == null)
+					allowSceneObjects = false;
+				return macro $ethis = unityeditor.EditorGUILayout.ObjectField($guiContent, $ethis, cs.Lib.toNativeType($type), $v{allowSceneObjects}, $opts);
 			case _:
 				return null;
 		}
@@ -223,7 +232,7 @@ class Macro
 	public static function nativeArray(arr:Array<Expr>,pos:Position):Expr
 	{
 		if (arr == null || arr.length == 0)
-			return macro null;
+			return null;
 		var ret = [];
 		ret.push(macro var opts = new cs.NativeArray($v{arr.length}));
 		for (i in 0...arr.length)

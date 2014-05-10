@@ -13,8 +13,6 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 
 	/**
 		Cool animation curve description!
-		@range 10,20,30,40
-		@color #f0f0f0cc
 	**/
 	public var curve:AnimationCurve = new AnimationCurve();
 
@@ -22,6 +20,8 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 		A Slider
 	**/
 	public var slider:Slider<Int> = new Slider(1,10,5);
+
+	public var obj:Object;
 
 	@:meta(UnityEditor.MenuItem("Window/Haxe Properties"))
 	public static function showWindow()
