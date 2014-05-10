@@ -103,15 +103,24 @@ class Macro
 			macro new unityengine.GUIContent($v{label}, $v{tooltip});
 		}
 
-		var opts = field.doc == null ? null : getOptions(docs, field.pos);
+		var opts = field.doc == null ? null : nativeArray(getOptions(docs, field.pos), pos);
 
 		switch name {
 			case 'Vector2' if (unity):
-				return macro $ethis = unityeditor.EditorGUILayout.Vector2Field($guiContent, $ethis, ${nativeArray(opts,pos)});
+				return macro $ethis = unityeditor.EditorGUILayout.Vector2Field($guiContent, $ethis, $opts);
 			case 'Vector3' if (unity):
-				return macro $ethis = unityeditor.EditorGUILayout.Vector3Field($guiContent, $ethis, ${nativeArray(opts,pos)});
+				return macro $ethis = unityeditor.EditorGUILayout.Vector3Field($guiContent, $ethis, $opts);
 			case 'Vector4' if (unity):
-				return macro $ethis = unityeditor.EditorGUILayout.Vector4Field($guiContent, $ethis, ${nativeArray(opts,pos)});
+				return macro $ethis = unityeditor.EditorGUILayout.Vector4Field($guiContent, $ethis, $opts);
+			case 'AnimationCurve' if (unity):
+				var range = parseRect(docs['range']),
+						color = parseColor(docs['color']);
+				if (color == null)
+					color = parseColor('green');
+				if (range == null)
+					return macro $ethis = unityeditor.EditorGUILayout.CurveField($guiContent, $ethis, $opts);
+				else
+					return macro $ethis = unityeditor.EditorGUILayout.CurveField($guiContent, $ethis, $color, $range, $opts);
 			case _:
 				return null;
 		}
@@ -119,7 +128,7 @@ class Macro
 
 	public static function nativeArray(arr:Array<Expr>,pos:Position):Expr
 	{
-		if (arr == null)
+		if (arr == null || arr.length == 0)
 			return macro null;
 		var ret = [];
 		ret.push(macro var opts = new cs.NativeArray($v{arr.length}));
@@ -185,6 +194,62 @@ class Macro
 			case _:
 				null;
 		}
+	}
+
+	private static function parseRect(str:String):Null<Expr>
+	{
+		if (str == null)
+			return null;
+		var arr = str.trim().split(',').map(Std.parseFloat);
+		return macro new unityengine.Rect($v{arr[0]},$v{arr[1]},$v{arr[2]},$v{arr[3]});
+	}
+
+	private static function parseColor(str:String):Null<Expr>
+	{
+		if (str == null)
+			return null;
+
+		var rgba = switch str.trim() {
+			case 'black':
+				0x000000ff;
+			case 'blue':
+				0x0000ffff;
+			case 'clear':
+				0x0;
+			case 'cyan':
+				0x00FFFFFF;
+			case 'gray':
+				0x808080ff;
+			case 'magenta':
+				0xff00ffff;
+			case 'red':
+				0xff0000ff;
+			case 'white':
+				0xffffffff;
+			case 'yellow':
+				0xffea04ff;
+			case s if (s.charCodeAt(0) == '#'.code):
+				s = s.substr(1);
+				switch s.length {
+					case 3:
+						Std.parseInt('0x' + s.charAt(0) + s.charAt(0) + s.charAt(1) + s.charAt(1) + s.charAt(2) + s.charAt(2) + 'ff');
+					case 4:
+						Std.parseInt('0x' + s.charAt(0) + s.charAt(0) + s.charAt(1) + s.charAt(1) + s.charAt(2) + s.charAt(2) + s.charAt(3) + s.charAt(3));
+					case 6:
+						Std.parseInt('0x' + s + "ff");
+					case 8:
+						Std.parseInt('0x' + s);
+					default:
+						return null;
+				}
+			case _:
+				return null;
+		}
+		var r = (rgba >>> 24) & 0xFF,
+				g = (rgba >>> 16) & 0xFF,
+				b = (rgba >>> 8) & 0xFF,
+				a = rgba & 0xff;
+		return macro new unityengine.Color($v{r / 0xff}, $v{g / 0xff}, $v{b / 0xff}, $v{a / 0xff});
 	}
 
 	public static function parseComments(c:String):Array<{ tag:Null<String>, contents:String }>
