@@ -1,47 +1,42 @@
 package unihx.inspector;
+import cs.NativeArray;
 
 /**
 	A generic popup selection field.
-
-	The following options can be used:
 **/
-//Popup / IntPopup
-abstract Select<Key,Value>({ options:Map<Key,Value>, selected:Null<Key> })
+@:struct @:nativeGen class Select<T>
 {
-	@:extern inline public function new(?opts)
+	public var options:NativeArray<String>;
+	public var values:NativeArray<T>;
+	public var selectedIndex:Int;
+
+	public var selected(get,never):Null<T>;
+
+	public function new(options:Array<String>,values:Array<T>,selected=-1)
 	{
-		this = { options : opts == null ? new Map() : opts, selected: null };
+		this.options = cs.Lib.nativeArray(options,true);
+		this.values = cs.Lib.nativeArray(values,true);
+		this.selectedIndex = selected;
 	}
 
-	@:extern inline public function add(key:Key, value:Value)
+	public static function fromOptions(options:Array<String>,selected=-1):Select<String>
 	{
-		this.options.set(key,value);
+		return new Select(options,options,selected);
 	}
 
-	@:extern inline public function options():Map<Key,Value>
+	public static function fromMap<T>(map:Map<String,T>,?selected:String)
 	{
-		return this.options;
+		var arr = [ for (key in map.keys()) key ],
+				vals = [ for (k in arr) map[k] ];
+		var sel = if (selected == null)
+			-1;
+		else
+			arr.indexOf(selected);
+		return new Select(arr,vals,sel);
 	}
 
-	@:extern inline public function remove(key:Key):Bool
+	private function get_selected():Null<T>
 	{
-		return this.options.remove(key);
-	}
-
-	@:extern inline public function keys()
-	{
-		return this.options.keys();
-	}
-
-	@:to @:extern inline public function selected():Null<Key>
-	{
-		return this.selected;
-	}
-
-	@:from @:extern inline public static function fromMap(map)
-	{
-		return new Select(map);
+		return selectedIndex < 0 ? null : values[selectedIndex];
 	}
 }
-
-

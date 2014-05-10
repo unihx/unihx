@@ -1,3 +1,3 @@
 package unihx.inspector;
 
-typedef Tag = unityengine.Tag;
+typedef Tag = String;

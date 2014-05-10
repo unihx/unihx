@@ -4,11 +4,6 @@ package unihx.inspector;
 //MinMax
 /**
 	A special slider the user can use to specify a range between a min and a max.
-	Options:
-		- upper / maxLimit : maximum limit
-		- lower / minLimit : minimum limit
-		- min / minValue : selected minimum value
-		- max / maxValue : selected maximum value
 **/
 @:struct class Range
 {

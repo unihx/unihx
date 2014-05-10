@@ -23,7 +23,8 @@ class Macro
 				continue;
 			switch f.kind {
 				case FVar(t,e):
-					addedFields.push(f);
+					if (!f.meta.exists(function(v) return v.name == ":skip"))
+						addedFields.push(f);
 					if (e != null)
 					{
 						var ethis = { expr: EField(macro this, f.name), pos:f.pos };
@@ -114,15 +115,18 @@ class Macro
 		iter(e);
 	}
 
-	public static function exprFromType(ethis:Expr, field:ClassField):Expr
+	public static function exprFromType(ethis:Expr, field:ClassField, ?type):Expr
 	{
 		if (field == null) return null;
+		if (type == null) type = field.type;
 		var pos = field.pos;
-		var type = follow(field.type),
-				pack = null,
+		var pack = null,
 				name = null,
 				params = null;
 		switch type {
+			case TMono(r) if (r != null):
+				exprFromType(ethis,field,r.get());
+
 			case TMono(_) | TDynamic(_):
 				// pack = []; name = "Dynamic"; params = [];
 				// throw new Error('Unsupported Dynamic',pos);
@@ -148,6 +152,11 @@ class Macro
 			case TAbstract(t,p):
 				var t = t.get();
 				pack = t.pack; name = t.name; params = p;
+			case TType(_.get() => { pack:['unihx','inspector'], name:name },p):
+				pack = ['unihx','inspector']; name = name; params = p;
+
+			case TType(_,_):
+				return exprFromType(ethis, field, Context.follow(type,true));
 			case _:
 				return null;
 			// case _: throw new Error('assert',pos);
@@ -161,6 +170,7 @@ class Macro
 			case ['unityengine']:
 				unity = true;
 			case ['unihx','inspector']:
+				unity = true;
 				inspector = true;
 			case _:
 		}
@@ -218,8 +228,26 @@ class Macro
 				}
 			case 'Layer' if (inspector):
 				return macro $ethis = unityeditor.EditorGUILayout.LayerField($guiContent, $ethis, $opts);
+			case 'Password' if (inspector):
+				return macro $ethis = unityeditor.EditorGUILayout.PasswordField($guiContent, $ethis, $opts);
+			case 'Range' if (inspector):
+				return macro unityeditor.EditorGUILayout.MinMaxSlider($guiContent, $ethis.minValue, $ethis.maxValue, $ethis.minLimit, $ethis.maxLimit, $opts);
+			case 'Rect' if (unity):
+				return macro unityeditor.EditorGUILayout.RectField($guiContent, $ethis, $opts);
+			case 'Select' if (inspector):
+				return macro $ethis.selectedIndex = unityeditor.EditorGUILayout.Popup($guiContent, $ethis.selectedIndex, $ethis.options, $opts);
+			case 'Space' if (inspector):
+				return macro unityeditor.EditorGUILayout.Space();
+			case 'Tag' if (inspector):
+				return macro $ethis = unityeditor.EditorGUILayout.TagField($guiContent, $ethis, $opts);
+			case 'Text' | 'String':
+				return macro $ethis = unityeditor.EditorGUILayout.TextField($guiContent, $ethis, $opts);
+			case 'TextArea' if (inspector):
+				return macro $ethis = unityeditor.EditorGUILayout.TextArea($ethis, $opts);
+			case 'Toggle' if (inspector):
+				return macro $ethis = unityeditor.EditorGUILayout.Toggle($guiContent, $ethis, $opts);
 			case _ if (field.type.unify( getType("unityengine.Object") )):
-				var allowSceneObjects = parseBool(docs['allow-scene-objects']),
+				var allowSceneObjects = parseBool(docs['scene-objects']),
 						type = parse(pack.join(".") + (pack.length == 0 ? name : "." + name),pos);
 				if (allowSceneObjects == null)
 					allowSceneObjects = false;
