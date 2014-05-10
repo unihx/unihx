@@ -152,11 +152,11 @@ class Macro
 			case TAbstract(t,p):
 				var t = t.get();
 				pack = t.pack; name = t.name; params = p;
-			case TType(_.get() => { pack:['unihx','inspector'], name:name },p):
-				pack = ['unihx','inspector']; name = name; params = p;
+			case TType(_.get() => { pack:['unihx','inspector'], name:n },p):
+				pack = ['unihx','inspector']; name = n; params = p;
 
 			case TType(_,_):
-				return exprFromType(ethis, field, Context.follow(type,true));
+				return exprFromType(ethis, field, follow(type,true));
 			case _:
 				return null;
 			// case _: throw new Error('assert',pos);
@@ -252,6 +252,8 @@ class Macro
 				if (allowSceneObjects == null)
 					allowSceneObjects = false;
 				return macro $ethis = unityeditor.EditorGUILayout.ObjectField($guiContent, $ethis, cs.Lib.toNativeType($type), $v{allowSceneObjects}, $opts);
+			case _ if (field.type.unify( getType('unihx.inspector.InspectorBuild') )):
+				return macro $ethis.OnGUI();
 			case _:
 				return null;
 		}
