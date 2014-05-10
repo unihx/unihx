@@ -15,9 +15,10 @@ class Macro
 				var f = f.get();
 				var allfields = [],
 						ethis = macro this;
-				for (cf in f.fields)
+				var fs = [ for (f in f.fields) f.name => f ];
+				for (cf in fields)
 				{
-					var expr = exprFromType(ethis, cf);
+					var expr = exprFromType(ethis, fs[cf.name]);
 					changePos(expr,cf.pos);
 					if (expr != null)
 						allfields.push(expr);
@@ -103,7 +104,7 @@ class Macro
 			macro new unityengine.GUIContent($v{label}, $v{tooltip});
 		}
 
-		var opts = field.doc == null ? null : nativeArray(getOptions(docs, field.pos), pos);
+		var opts = field.doc == null ? macro null : nativeArray(getOptions(docs, field.pos), pos);
 
 		switch name {
 			case 'Vector2' if (unity):
@@ -121,6 +122,23 @@ class Macro
 					return macro $ethis = unityeditor.EditorGUILayout.CurveField($guiContent, $ethis, $opts);
 				else
 					return macro $ethis = unityeditor.EditorGUILayout.CurveField($guiContent, $ethis, $color, $range, $opts);
+			case 'Color' if (unity):
+				return macro $ethis = unityeditor.EditorGUILayout.ColorField($guiContent, $ethis, $opts);
+			case 'Int' if (pack.length == 0):
+				return macro $ethis = unityeditor.EditorGUILayout.IntField($guiContent, $ethis, $opts);
+			case 'Slider' if (inspector):
+				switch params {
+					case [ _.follow() => TAbstract(_.get() => { pack:[], name:name },_) ]: switch name {
+						case "Int":
+							return macro $ethis.value = unityeditor.EditorGUILayout.IntSlider($guiContent, $ethis.value, $ethis.minLimit, $ethis.maxLimit, $opts);
+						case "Float" | "Single":
+							return macro $ethis.value = unityeditor.EditorGUILayout.Slider($guiContent, $ethis.value, $ethis.minLimit, $ethis.maxLimit, $opts);
+						case _:
+							throw new Error("Invalid parameter for Slider: " + name, pos);
+					}
+					case _:
+						throw new Error("Invalid parameter for Slider", pos);
+				}
 			case _:
 				return null;
 		}
