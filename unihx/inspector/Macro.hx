@@ -83,8 +83,7 @@ class Macro
 				return null;
 		} else {
 			switch ComplexType.TAnonymous(addedFields).toType() {
-				case TAnonymous(f):
-					var f = f.get();
+				case TAnonymous(_.get() => f):
 					var allfields = [],
 							ethis = macro this;
 					var fs = [ for (f in f.fields) f.name => f ];
@@ -187,8 +186,10 @@ class Macro
 				pack = c.pack; name = c.name; params = p;
 			case TAnonymous(a):
 				var a = a.get();
+				var fields = a.fields;
+				fields.sort(function(v1,v2) return Reflect.compare(getPosInfos(v1.pos).min, getPosInfos(v2.pos).min));
 				var arr = [];
-				for (cf in a.fields)
+				for (cf in fields)
 				{
 					var ethis = { expr: EField(ethis, field.name), pos:ethis.pos };
 					arr.push( exprFromType(ethis,cf) );
