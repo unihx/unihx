@@ -25,6 +25,14 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 
 	public var obj:Object;
 
+	public var test:{
+		/**
+			some property here
+		**/
+		var someProp:String;
+		var cc:Int;
+	} = cast {};
+
 	// public var cooler:unityengine.Color;
 
 	@:meta(UnityEditor.MenuItem("Window/Haxe Properties"))
@@ -43,6 +51,7 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 			Macro.prop(this,slider);
 			Macro.prop(this,obj);
 			// Macro.prop(this,cooler);
+			Macro.prop(this,test);
 		}
 
 	}

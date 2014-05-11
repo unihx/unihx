@@ -190,6 +190,7 @@ class Macro
 				var arr = [];
 				for (cf in a.fields)
 				{
+					var ethis = { expr: EField(ethis, field.name), pos:ethis.pos };
 					arr.push( exprFromType(ethis,cf) );
 				}
 				return { expr: EBlock(arr), pos: pos };
