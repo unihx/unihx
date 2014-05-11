@@ -16,6 +16,8 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 	**/
 	public var curve:AnimationCurve = new AnimationCurve();
 
+	public var t:Toggle;
+
 	/**
 		A Slider
 	**/
@@ -23,9 +25,25 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 
 	public var obj:Object;
 
+	// public var cooler:unityengine.Color;
+
 	@:meta(UnityEditor.MenuItem("Window/Haxe Properties"))
 	public static function showWindow()
 	{
 		EditorWindow.GetWindow(cs.Lib.toNativeType(HaxeProperties));
+	}
+
+	public function OnGUI()
+	{
+		Macro.prop(this, vec2);
+		Macro.prop(this, curve);
+		Macro.prop(this,t);
+		if (t)
+		{
+			Macro.prop(this,slider);
+			Macro.prop(this,obj);
+			// Macro.prop(this,cooler);
+		}
+
 	}
 }

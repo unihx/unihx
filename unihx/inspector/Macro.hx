@@ -1,13 +1,55 @@
 package unihx.inspector;
+#if macro
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxe.macro.Context.*;
 using haxe.macro.Tools;
 using StringTools;
 using Lambda;
+#end
 
 class Macro
 {
+	macro public static function prop(ethis:Expr, efield:Expr)
+	{
+		var field = switch efield.expr {
+			case EConst(CIdent(s)) | EConst(CString(s)):
+				s;
+			case _:
+				throw new Error("This argument must either be a constant string or a constant identifier", efield.pos);
+		};
+
+		var cf = switch typeof(ethis).follow() {
+			case TInst(_.get() => c,_):
+				function loop(c:ClassType)
+				{
+					var f = c.fields.get().find(function (cf) return cf.name == field);
+					if (f == null)
+					{
+						if (c.superClass == null)
+							return null;
+						return loop( c.superClass.t.get() );
+					} else {
+						return f;
+					}
+				}
+				loop(c);
+			case TAnonymous(_.get() => a):
+				a.fields.find(function (cf) return cf.name == field);
+			case t:
+				throw new Error('Only class instances or anonymous types can be used, but the type was ' + t.toString(), ethis.pos);
+		};
+
+		if (cf == null)
+			throw new Error('Field $field was not found at ${typeof(ethis).toString()}',currentPos());
+		var ret = exprFromType(ethis,cf);
+		if (ret == null)
+			return macro null;
+		else
+			return ret;
+	}
+
+#if macro
 	public static function build():Array<Field>
 	{
 		var fields = getBuildFields(),
@@ -35,25 +77,31 @@ class Macro
 			}
 		}
 
-		switch ComplexType.TAnonymous(addedFields).toType() {
-			case TAnonymous(f):
-				var f = f.get();
-				var allfields = [],
-						ethis = macro this;
-				var fs = [ for (f in f.fields) f.name => f ];
-				for (cf in fields)
-				{
-					var expr = exprFromType(ethis, fs[cf.name]);
-					if (expr == null)
-						continue;
+		if (fields.exists(function (cf) return cf.name == "OnGUI"))
+		{
+			if (ctorAdded.length == 0)
+				return null;
+		} else {
+			switch ComplexType.TAnonymous(addedFields).toType() {
+				case TAnonymous(f):
+					var f = f.get();
+					var allfields = [],
+							ethis = macro this;
+					var fs = [ for (f in f.fields) f.name => f ];
+					for (cf in fields)
+					{
+						var expr = exprFromType(ethis, fs[cf.name]);
+						if (expr == null)
+							continue;
 
-					changePos(expr,cf.pos);
-					allfields.push(expr);
-				}
-				var block = { expr:EBlock(allfields), pos:pos };
-				var td = macro class { public function OnGUI() $block; };
-				fields.push(td.fields[0]);
-			case _: throw "assert";
+						changePos(expr,cf.pos);
+						allfields.push(expr);
+					}
+					var block = { expr:EBlock(allfields), pos:pos };
+					var td = macro class { public function OnGUI() $block; };
+					fields.push(td.fields[0]);
+				case _: throw "assert";
+			}
 		}
 
 		if (ctorAdded.length > 0)
@@ -105,7 +153,7 @@ class Macro
 		}
 	}
 
-	public static function changePos(e:Expr,p)
+	private static function changePos(e:Expr,p)
 	{
 		function iter(e:Expr)
 		{
@@ -115,7 +163,7 @@ class Macro
 		iter(e);
 	}
 
-	public static function exprFromType(ethis:Expr, field:ClassField, ?type):Expr
+	private static function exprFromType(ethis:Expr, field:ClassField, ?type):Expr
 	{
 		if (field == null) return null;
 		if (type == null) type = field.type;
@@ -259,7 +307,7 @@ class Macro
 		}
 	}
 
-	public static function nativeArray(arr:Array<Expr>,pos:Position):Expr
+	private static function nativeArray(arr:Array<Expr>,pos:Position):Expr
 	{
 		if (arr == null || arr.length == 0)
 			return null;
@@ -273,7 +321,7 @@ class Macro
 		return { expr:EBlock(ret), pos:pos };
 	}
 
-	public static function getOptions(opts:Map<String,String>,pos:Position):Array<Expr>
+	private static function getOptions(opts:Map<String,String>,pos:Position):Array<Expr>
 	{
 		var ret = [];
 		var width = parseFloat(opts['width']),
@@ -385,7 +433,7 @@ class Macro
 		return macro new unityengine.Color($v{r / 0xff}, $v{g / 0xff}, $v{b / 0xff}, $v{a / 0xff});
 	}
 
-	public static function parseComments(c:String):Array<{ tag:Null<String>, contents:String }>
+	private static function parseComments(c:String):Array<{ tag:Null<String>, contents:String }>
 	{
 		var ret = [];
 		var curTag = null;
@@ -435,7 +483,7 @@ class Macro
 		return ret;
 	}
 
-	public static function toSep(s:String,sep:Int):String
+	private static function toSep(s:String,sep:Int):String
 	{
 		if (s.length <= 1) return s; //allow upper-case aliases
 		var buf = new StringBuf();
@@ -457,4 +505,5 @@ class Macro
 
 		return buf.toString();
 	}
+#end
 }
