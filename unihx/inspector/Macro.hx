@@ -67,11 +67,41 @@ class Macro
 				case FVar(t,e):
 					if (!f.meta.exists(function(v) return v.name == ":skip"))
 						addedFields.push(f);
+					if (e == null)
+					{
+						switch t {
+							case TAnonymous(fields):
+								var objDecl = [];
+								for (f in fields)
+								{
+									switch f.kind {
+										case FVar(_,null):
+											objDecl.push({ field:f.name, expr: macro @:pos(f.pos) cast null });
+										case FVar(t,e):
+											objDecl.push({ field:f.name, expr: e });
+											f.kind = FVar(t,null);
+										case _:
+									}
+								}
+								e = { expr:EObjectDecl(objDecl), pos:f.pos };
+							case null | _:
+						}
+					}
+
 					if (e != null)
 					{
 						var ethis = { expr: EField(macro this, f.name), pos:f.pos };
 						ctorAdded.push(macro $ethis = $e);
 						f.kind = FVar(t,null);
+					}
+				case FProp(get,set,t,e):
+					if (!f.meta.exists(function(v) return v.name == ":skip"))
+						addedFields.push(f);
+					if (e != null)
+					{
+						var ethis = { expr: EField(macro this, f.name), pos:f.pos };
+						ctorAdded.push(macro $ethis = $e);
+						f.kind = FProp(get,set,t,null);
 					}
 				case _:
 			}
@@ -192,7 +222,9 @@ class Macro
 				for (cf in fields)
 				{
 					var ethis = { expr: EField(ethis, field.name), pos:ethis.pos };
-					arr.push( exprFromType(ethis,cf) );
+					var e =  exprFromType(ethis,cf);
+					if (e != null)
+						arr.push(e);
 				}
 				return { expr: EBlock(arr), pos: pos };
 			case TFun(_,_):
@@ -294,7 +326,7 @@ class Macro
 				return macro $ethis = unityeditor.EditorGUILayout.TextField($guiContent, $ethis, $opts);
 			case 'TextArea' if (inspector):
 				return macro $ethis = unityeditor.EditorGUILayout.TextArea($ethis, $opts);
-			case 'Toggle' if (inspector):
+			case 'Bool' if (pack.length == 0):
 				return macro $ethis = unityeditor.EditorGUILayout.Toggle($guiContent, $ethis, $opts);
 			case _ if (field.type.unify( getType("unityengine.Object") )):
 				var allowSceneObjects = parseBool(docs['scene-objects']),

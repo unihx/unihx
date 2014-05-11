@@ -2,38 +2,12 @@ package unihx._internal.editor;
 import unityengine.*;
 import unityeditor.*;
 import unihx.inspector.*;
+import cs.system.net.sockets.*;
+import cs.system.net.*;
 
 class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWindow
 {
-	/**
-		Here's a cool description
-		@label Some Cool Label
-	**/
-	public var vec2:Vector2;
-
-	/**
-		Cool animation curve description!
-	**/
-	public var curve:AnimationCurve = new AnimationCurve();
-
-	public var t:Toggle;
-
-	/**
-		A Slider
-	**/
-	public var slider:Slider<Int> = new Slider(1,10,5);
-
-	public var obj:Object;
-
-	public var test:{
-		/**
-			some property here
-		**/
-		var someProp:String;
-		var cc:Int;
-	} = cast {};
-
-	// public var cooler:unityengine.Color;
+	public var serializable:HaxePropertiesData = new HaxePropertiesData();
 
 	@:meta(UnityEditor.MenuItem("Window/Haxe Properties"))
 	public static function showWindow()
@@ -41,18 +15,82 @@ class HaxeProperties implements unihx.inspector.InspectorBuild extends EditorWin
 		EditorWindow.GetWindow(cs.Lib.toNativeType(HaxeProperties));
 	}
 
-	public function OnGUI()
+	function OnEnable()
 	{
-		Macro.prop(this, vec2);
-		Macro.prop(this, curve);
-		Macro.prop(this,t);
-		if (t)
+		var s = EditorPrefs.GetString('HaxeProps');
+		if (s != null && s != "")
 		{
-			Macro.prop(this,slider);
-			Macro.prop(this,obj);
-			// Macro.prop(this,cooler);
-			Macro.prop(this,test);
+			try
+			{
+				var ser = haxe.Unserializer.run(s);
+				this.serializable = ser;
+			}
+			catch(e:Dynamic)
+			{
+				Debug.LogError('Failed while opening saved HaxeProps. Resetting to defaults');
+				Debug.LogError(e);
+			}
 		}
-
 	}
+
+	function OnDisable()
+	{
+		EditorPrefs.SetString("HaxeProps",haxe.Serializer.run(this.serializable));
+	}
+}
+
+class HaxePropertiesData implements InspectorBuild
+{
+	/**
+		Choose how will Haxe classes be compiled
+	**/
+	@:isVar public var compilation(get,set):Comp = CompilationServer(availablePort());
+	@:skip var compiler:HaxeCompiler;
+
+	public function new()
+	{
+	}
+
+	private function get_compilation():Comp
+	{
+		return compilation;
+	}
+
+	private function set_compilation(v):Comp
+	{
+		if (!v.equals(compilation))
+		{
+			update();
+		}
+		return compilation = v;
+	}
+
+	private function update()
+	{
+	}
+
+	private static function availablePort()
+	{
+		var l = new TcpListener(IPAddress.Loopback,0);
+		l.Start();
+		var port = cast(l.LocalEndpoint, IPEndPoint).Port;
+		l.Stop();
+		return port;
+	}
+}
+
+enum Comp
+{
+	/**
+		@label Don't compile
+	**/
+	DontCompile;
+	/**
+		@label Use standard Haxe compiler
+	**/
+	Compile;
+	/**
+		@label Use compilation server
+	**/
+	CompilationServer(port:Int);
 }
