@@ -1,4 +1,3 @@
 -net-lib lib/UnityEngine.dll
 -net-lib lib/UnityEditor.dll
---macro include('unihx._internal.editor')
 -D use_rtti_doc
