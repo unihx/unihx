@@ -1,6 +1,8 @@
 import mcli.*;
 import sys.FileSystem.*;
 
+using StringTools;
+
 class Cli extends CommandLine
 {
 	/**
@@ -20,9 +22,41 @@ class Cli extends CommandLine
 
 	private function haxe(args:Array<String>)
 	{
-		var ret = Sys.command('haxe',args);
+		print( 'haxe ' + [for (arg in args) arg.split('"').join('\\\"') ].join(" ") );
+		var ret = Sys.command('haxe ' + [for (arg in args) arg.split('"').join('\\\"') ].join(" "));
 		if (ret != 0)
 			Sys.exit(ret);
+	}
+
+	/**
+		Force always to yes
+	**/
+	public var force:Bool = false;
+
+	public var verbose:Bool = false;
+
+	private function print(msg:String)
+	{
+		if (verbose) Sys.println(msg);
+	}
+
+	private function ask(msg:String, ?preSelect:Bool):Bool
+	{
+		if (force) return true;
+		Sys.println(msg);
+		var stdin = Sys.stdin();
+		var str = "(" + (preSelect == true ? "Y" : "y") + "/" + (preSelect == false ? "N" : "n") + ") ";
+		while (true)
+		{
+			Sys.print(str);
+			var ln = stdin.readLine().trim().toLowerCase();
+			if (ln == "" && preSelect != null)
+				return preSelect;
+			else if (ln == "y")
+				return true;
+			else if (ln == "n")
+				return false;
+		}
 	}
 
 	public static function main()
@@ -40,7 +74,7 @@ class Cli extends CommandLine
 /**
 	unihx helper tool
 **/
-class Helper extends Cli
+class Helper extends CommandLine
 {
 	/**
 		Initializes the target Unity project to use unihx
@@ -56,11 +90,6 @@ class Helper extends Cli
 **/
 class InitCmd extends Cli
 {
-	/**
-		If set, creates a separate assembly with the whole Haxe standard library, allowing to have multiple hxml build files. This will disable DCE for the standard library.
-	**/
-	public var createStd:Bool = false;
-
 	public function runDefault(targetDir=".")
 	{
 		if (!exists(targetDir))
@@ -68,18 +97,24 @@ class InitCmd extends Cli
 			err('"$targetDir" does not exist');
 		}
 
+		if (targetDir == "")
+			targetDir = ".";
 		// look for 'Assets' folder
 		var assets = getAssets(targetDir);
 		if (assets == null)
 		{
 			err('Cannot find the Assets folder at "$targetDir"');
 		}
+		if (assets == "")
+			assets = ".";
 
-		if (createStd)
+		if (!exists(assets + '/build.hxml') || ask('$targetDir/build.hxml already exists. Replace?',true))
 		{
-			var stdDir = assets + '/Standard Assets/Haxe-Std';
-			createDirectory(stdDir);
-			haxe(['-lib','unihx','--macro',"unihx._internal.Compiler.compilestd\\(\\)",'-cs',stdDir,'-D','no-compilation']);
+			sys.io.File.saveContent(assets + '/build.hxml', '-lib unihx\n-cs hx-compiled\n-D unity_std_target=Standard Assets');
+			var old = Sys.getCwd();
+			Sys.setCwd(assets);
+			haxe(['build.hxml',"--macro","include\\(\"unihx._internal.editor\"\\)"]);
+			Sys.setCwd(old);
 		}
 	}
 
@@ -89,14 +124,17 @@ class InitCmd extends Cli
 		while (full[full.length-1] == "")
 			full.pop();
 
+		var buf = new StringBuf();
+		buf.add(".");
 		while (full.length > 1)
 		{
 			var dir = full.join('/');
 			for (file in readDirectory(dir))
 			{
 				if (file == "Assets")
-					return dir + '/Assets';
+					return buf + '/Assets';
 			}
+			buf.add('/..');
 			full.pop();
 		}
 		return null;

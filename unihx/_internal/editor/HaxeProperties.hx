@@ -56,7 +56,7 @@ class HaxePropertiesData implements InspectorBuild
 		return compilation;
 	}
 
-	private function set_compilation(v):Comp
+	private function set_compilation(v:Comp):Comp
 	{
 		if (!v.equals(compilation))
 		{
