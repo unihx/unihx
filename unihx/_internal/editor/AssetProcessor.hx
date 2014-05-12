@@ -56,6 +56,7 @@ using StringTools;
 			trace(cmd.exitCode());
 			trace(cmd.stdout.readAll());
 			trace(cmd.stderr.readAll());
+			unityeditor.AssetDatabase.Refresh();
 			// var r = Sys.command('haxe',['--cwd','Assets','classpaths.hxml','params.hxml','--macro','unihx._internal.Compiler.compile\\(\\)']);
 			// trace(r);
 		}
