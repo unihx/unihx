@@ -108,14 +108,20 @@ class InitCmd extends Cli
 		if (assets == "")
 			assets = ".";
 
-		if (!exists(assets + '/build.hxml') || ask('$targetDir/build.hxml already exists. Replace?',true))
+		if (!exists(assets + "/classpaths.hxml"))
 		{
-			sys.io.File.saveContent(assets + '/build.hxml', '-lib unihx\n-cs hx-compiled\n-D unity_std_target=Standard Assets');
+			sys.io.File.saveContent(assets + '/classpaths.hxml', '-cp .\n-cp Scripts');
+		}
+
+		if (!exists(assets + '/params.hxml') || ask('$targetDir/params.hxml already exists. Replace?',true))
+		{
+			sys.io.File.saveContent(assets + '/params.hxml', 'classpaths.hxml\n-lib unihx\n-cs hx-compiled\n-D unity_std_target=Standard Assets');
 			var old = Sys.getCwd();
 			Sys.setCwd(assets);
-			haxe(['build.hxml',"--macro","include\\(\"unihx._internal.editor\"\\)"]);
+			haxe(['params.hxml',"--macro","include\\(\"unihx._internal.editor\"\\)"]);
 			Sys.setCwd(old);
 		}
+
 	}
 
 	private function getAssets(dir:String):Null<String>
