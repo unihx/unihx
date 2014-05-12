@@ -1,5 +1,7 @@
 package unihx._internal.editor;
 import haxe.ds.Vector;
+import sys.FileSystem.*;
+import haxe.io.Path;
 
 using StringTools;
 
@@ -22,9 +24,40 @@ using StringTools;
 			if (str.endsWith(".hx"))
 				sources.push(str);
 		}
+
+		for (d in movedFromAssetPaths)
+		{
+			if (d.endsWith(".hx"))
+			{
+				//delete also .cs file
+				var path = Path.directory(d) + '/hx-compiled/' + Path.withoutDirectory(d).substr(0,-2) + "cs";
+				if (exists( path ))
+				{
+					deleteFile(path);
+				}
+			}
+		}
+		for (d in deletedAssets)
+		{
+			if (d.endsWith(".hx"))
+			{
+				//delete also .cs file
+				var path = Path.directory(d) + '/hx-compiled/' + Path.withoutDirectory(d).substr(0,-2) + "cs";
+				if (exists( path ))
+				{
+					deleteFile(path);
+				}
+			}
+		}
 		if (sources.length > 0)
 		{
-			trace(sources);
+			trace("calling");
+			var cmd = new sys.io.Process('haxe',['--cwd',Sys.getCwd() + '/Assets','classpaths.hxml','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+			trace(cmd.exitCode());
+			trace(cmd.stdout.readAll());
+			trace(cmd.stderr.readAll());
+			// var r = Sys.command('haxe',['--cwd','Assets','classpaths.hxml','params.hxml','--macro','unihx._internal.Compiler.compile\\(\\)']);
+			// trace(r);
 		}
 	}
 }
