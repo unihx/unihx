@@ -13,7 +13,9 @@ using StringTools;
 			movedAssets:Vector<String>,
 			movedFromAssetPaths:Vector<String>)
 	{
+		trace(cs.Lib.array(cast importedAssets));
 		var sources = [],
+				deleted = [],
 				refresh = false;
 		for (str in importedAssets)
 		{
@@ -30,35 +32,29 @@ using StringTools;
 		{
 			if (d.endsWith(".hx"))
 			{
-				//delete also .cs file
-				var path = Path.directory(d) + '/hx-compiled/' + Path.withoutDirectory(d).substr(0,-2) + "cs";
-				if (exists( path ))
-				{
-					deleteFile(path);
-					if (exists( path + '.meta' ))
-						deleteFile( path + '.meta' );
-					if (readDirectory( Path.directory(d) + '/hx-compiled' ).length == 0)
-						deleteDirectory( Path.directory(d) + '/hx-compiled' );
-					refresh = true;
-				}
+				deleted.push(d);
 			}
 		}
 		for (d in deletedAssets)
 		{
 			if (d.endsWith(".hx"))
 			{
-				//delete also .cs file
-				var path = Path.directory(d) + '/hx-compiled/' + Path.withoutDirectory(d).substr(0,-2) + "cs";
-				if (exists( path ))
-				{
-					deleteFile(path);
-					if (exists( path + '.meta' ))
-						deleteFile( path + '.meta' );
-					trace( readDirectory( Path.directory(d) + '/hx-compiled' ) );
-					if (readDirectory( Path.directory(d) + '/hx-compiled' ).length == 0)
-						deleteDirectory( Path.directory(d) + '/hx-compiled' );
-					refresh = true;
-				}
+				deleted.push(d);
+			}
+		}
+
+		for (d in deleted)
+		{
+			//delete also .cs file
+			var path = Path.directory(d) + '/hx-compiled/' + Path.withoutDirectory(d).substr(0,-2) + "cs";
+			if (exists( path ))
+			{
+				deleteFile(path);
+				if (exists( path + '.meta' ))
+					deleteFile( path + '.meta' );
+				if (readDirectory( Path.directory(d) + '/hx-compiled' ).length == 0)
+					deleteDirectory( Path.directory(d) + '/hx-compiled' );
+				refresh = true;
 			}
 		}
 		if (sources.length > 0)
