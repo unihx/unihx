@@ -2,3 +2,4 @@
 -neko ../run.n
 -main Cli
 -lib mcli
+-resource res/Template.hxproj@hxproj

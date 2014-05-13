@@ -60,13 +60,12 @@ using StringTools;
 		if (sources.length > 0)
 		{
 			trace("calling");
+			trace(Sys.environment());
 			refresh = true;
 			var cmd = new sys.io.Process('haxe',['--cwd',Sys.getCwd() + '/Assets','classpaths.hxml','params.hxml','--macro','unihx._internal.Compiler.compile()']);
 			trace(cmd.exitCode());
 			trace(cmd.stdout.readAll());
 			trace(cmd.stderr.readAll());
-			// var r = Sys.command('haxe',['--cwd','Assets','classpaths.hxml','params.hxml','--macro','unihx._internal.Compiler.compile\\(\\)']);
-			// trace(r);
 		}
 		if (refresh)
 		{

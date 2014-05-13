@@ -1,5 +1,7 @@
 import mcli.*;
 import sys.FileSystem.*;
+import haxe.io.Path;
+import haxe.Resource;
 
 using StringTools;
 
@@ -120,6 +122,12 @@ class InitCmd extends Cli
 			Sys.setCwd(assets);
 			haxe(['params.hxml',"--macro","include\\(\"unihx._internal.editor\"\\)"]);
 			Sys.setCwd(old);
+		}
+
+		var proj = assets + "/../" + Path.withoutDirectory( fullPath(assets + "/..") ) + '.hxproj';
+		if (!exists(proj))
+		{
+			sys.io.File.saveContent(proj, Resource.getString("hxproj"));
 		}
 
 	}
