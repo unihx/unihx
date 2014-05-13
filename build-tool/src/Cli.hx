@@ -130,6 +130,14 @@ class InitCmd extends Cli
 			sys.io.File.saveContent(proj, Resource.getString("hxproj"));
 		}
 
+		for (f in ['smcs','gmcs'])
+		{
+			if (!exists(assets + '/$f.rsp'))
+			{
+				sys.io.File.saveContent(assets+'/$f.rsp', "-nowarn:0109,0114,0219,0429,0168,0162");
+			}
+		}
+
 	}
 
 	private function getAssets(dir:String):Null<String>
