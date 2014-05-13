@@ -405,6 +405,9 @@ class Macro
 						cases.push( { values:[macro $v{i}], expr:macro return ${parse( etype.toString() + '.' + name, pos )}, guard:null } );
 					case TFun(args,_):
 						var exprs = [{ expr:EVars([ for (arg in args) { name:arg.name, expr:macro cast null, type:null } ]), pos:pos } ];
+						exprs.push(macro unityeditor.EditorGUILayout.BeginHorizontal(null));
+						exprs.push(macro unityeditor.EditorGUILayout.Space());
+						exprs.push(macro unityeditor.EditorGUILayout.BeginVertical(null));
 						exprs.push({ expr:ESwitch(
 							macro current,
 							[{
@@ -430,6 +433,8 @@ class Macro
 							if (ret != null)
 								exprs.push(ret);
 						};
+						exprs.push(macro unityeditor.EditorGUILayout.EndVertical());
+						exprs.push(macro unityeditor.EditorGUILayout.EndHorizontal());
 						var cond = macro popup != $v{i};
 						for (arg in args)
 							cond = macro $cond || !std.Type.enumEq($i{arg.name}, $i{arg.name + "__changed"});
