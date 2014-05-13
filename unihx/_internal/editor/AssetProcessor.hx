@@ -69,7 +69,8 @@ using StringTools;
 		}
 		if (refresh)
 		{
-			unityeditor.AssetDatabase.Refresh();
+			unityeditor.AssetDatabase.Refresh(ForceSynchronousImport);
+			unityengine.Debug.ClearDeveloperConsole();
 		}
 	}
 }
