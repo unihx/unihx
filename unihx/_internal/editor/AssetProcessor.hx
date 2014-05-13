@@ -62,7 +62,7 @@ using StringTools;
 			trace("calling");
 			trace(Sys.environment());
 			refresh = true;
-			var cmd = new sys.io.Process('haxe',['--cwd',Sys.getCwd() + '/Assets','classpaths.hxml','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+			var cmd = new sys.io.Process('haxe',['--cwd',Sys.getCwd() + '/Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
 			trace(cmd.exitCode());
 			trace(cmd.stdout.readAll());
 			trace(cmd.stderr.readAll());

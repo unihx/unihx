@@ -337,6 +337,7 @@ class Macro
 			case _ if (field.type.unify( getType('unihx.inspector.InspectorBuild') )):
 				return macro $ethis.OnGUI();
 			case _:
+				trace(name,unity,inspector);
 				return null;
 		}
 	}

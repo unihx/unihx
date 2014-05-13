@@ -10,14 +10,24 @@ class Compiler
 		var cwd = fullPath(haxe.io.Path.removeTrailingSlashes(Sys.getCwd()));
 		trace(cwd);
 		trace(Sys.systemName());
+		var asm = '../Library/ScriptAssemblies';
+		if (exists(asm))
+		{
+			for (file in readDirectory(asm))
+			{
+				if (file.endsWith('.dll'))
+					haxe.macro.Compiler.addNativeLib('$asm/$file');
+			}
+		}
 		// var files = [];
 		for (cp in Context.getClassPath())
 		{
 			var cp = haxe.io.Path.removeTrailingSlashes(cp);
-			if (cp == null)
+			if (cp == null || !exists(cp))
 				continue;
 			else if (cp == "")
 				cp = ".";
+			trace(cp);
 			cp = fullPath(cp);
 			if (cp.startsWith(cwd))
 			{
