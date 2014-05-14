@@ -107,9 +107,33 @@ class Macro
 			}
 		}
 
+		function filter(f:Field)
+		{
+			switch (f.kind)
+			{
+				case FVar(t,_) | FProp(_,_,t,_):
+					var t = t.toType();
+					if (t != null) switch (t.follow())
+					{
+						case TAbstract(_.get() => { pack:[], name:"Void" },_):
+							return false;
+						case _:
+							return true;
+					}
+				case _:
+			}
+			return true;
+		}
+
+		var f2 = fields.filter(filter);
+		var i = 0;
+		for (f in addedFields)
+			if (f.name == "_")
+				f.name = "_" + i++;
+
 		if (fields.exists(function (cf) return cf.name == "OnGUI"))
 		{
-			if (ctorAdded.length == 0)
+			if (ctorAdded.length == 0 && f2.length == fields.length)
 				return null;
 		} else {
 			switch ComplexType.TAnonymous(addedFields).toType() {
@@ -117,7 +141,7 @@ class Macro
 					var allfields = [],
 							ethis = macro this;
 					var fs = [ for (f in f.fields) f.name => f ];
-					for (cf in fields)
+					for (cf in addedFields)
 					{
 						var ethis = { expr:EField(ethis, cf.name), pos:pos };
 						var expr = exprFromType(ethis, fs[cf.name]);
@@ -129,7 +153,7 @@ class Macro
 					}
 					var block = { expr:EBlock(allfields), pos:pos };
 					var td = macro class { public function OnGUI() $block; };
-					fields.push(td.fields[0]);
+					f2.push(td.fields[0]);
 				case _: throw "assert";
 			}
 		}
@@ -148,7 +172,7 @@ class Macro
 				}
 
 				ctor = { name: "new", access: [APublic], pos:pos, kind:kind };
-				fields.push(ctor);
+				f2.push(ctor);
 			}
 			switch ctor.kind {
 				case FFun(fn):
@@ -164,7 +188,7 @@ class Macro
 				case _: throw "assert";
 			}
 		}
-		return fields;
+		return f2;
 	}
 
 	private static function getSuper(cls:Ref<ClassType>)
@@ -212,7 +236,6 @@ class Macro
 				return null;
 			case TEnum(e,p):
 				var e = e.get();
-				// trace(type);
 				// var docs = field.doc != null ? [ for (c in parseComments(field.doc)) (c.tag == null ? "" : c.tag.trim()) => c.contents.trim() ] : new Map();
 				// var label = docs.get('label');
 				// if (label == null)
@@ -341,6 +364,8 @@ class Macro
 				return macro $ethis = unityeditor.EditorGUILayout.TagField($guiContent, $ethis, $opts);
 			case 'Text' | 'String':
 				return macro $ethis = unityeditor.EditorGUILayout.TextField($guiContent, $ethis, $opts);
+			case 'ConstLabel':
+				return macro unityeditor.EditorGUILayout.LabelField($guiContent, $opts);
 			case 'TextArea' if (inspector):
 				return macro $ethis = unityeditor.EditorGUILayout.TextArea($ethis, $opts);
 			case 'Bool' if (pack.length == 0):
@@ -356,7 +381,6 @@ class Macro
 			case _ if (etype != null):
 				return macro $ethis = ${exprFromEnum(ethis, etype, type, guiContent, opts)};
 			case _:
-				trace(name,unity,inspector);
 				return null;
 		}
 	}
@@ -455,11 +479,9 @@ class Macro
 				var guiContent = ${nativeArray(guiContent,pos)};
 				var values = ${nativeArray(values,pos)};
 				var p2 = unityeditor.EditorGUILayout.IntPopup( label, popup, guiContent, values, opts );
-				trace(p2);
 				$eswitch;
 				return null;
 			};
-			trace(expr.toString());
 			//create select
 			// macro {
 			// 	var popup = std.Type.enumIndex(current) + 1;

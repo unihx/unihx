@@ -8,8 +8,10 @@ import sys.FileSystem.*;
 
 using StringTools;
 
+@:native('HaxeProperties')
 class HaxeProperties extends EditorWindow
 {
+	public var scroll:Vector2;
 	@:meta(UnityEditor.MenuItem("Window/Haxe Properties"))
 	public static function showWindow()
 	{
@@ -24,13 +26,21 @@ class HaxeProperties extends EditorWindow
 
 	function OnDisable()
 	{
-		trace('disable');
-		props().save();
 	}
 
 	function OnGUI()
 	{
+		var arr = new cs.NativeArray(1);
+		arr[0] = GUILayout.MaxHeight(300);
+		GUILayout.BeginVertical(arr);
+		scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
 		props().OnGUI();
+		GUILayout.EndScrollView();
+		if (GUILayout.Button("Save",null))
+		{
+			props().save();
+		}
+		GUILayout.EndVertical();
 	}
 
 	public static function props():HaxePropertiesData
@@ -46,10 +56,19 @@ class HaxePropertiesData implements InspectorBuild
 	**/
 	@:isVar public var compilation:Comp = CompilationServer(availablePort());
 
+	public var _:Space;
+
+	/**
+		@label Extra parameters
+	**/
+	public var _:ConstLabel;
+
 	/**
 		Extra Haxe parameters from build.hxml
+		@min-height 200
 	**/
 	public var extraParams:TextArea;
+
 
 	private static var current:HaxePropertiesData;
 
