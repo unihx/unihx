@@ -42,6 +42,10 @@ class HaxeProperties extends EditorWindow
 		{
 			props().save();
 		}
+		if (GUILayout.Button("Force recompile",null))
+		{
+			props().compile(['--cwd',Sys.getCwd() + '/Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+		}
 		GUILayout.EndVertical();
 	}
 
