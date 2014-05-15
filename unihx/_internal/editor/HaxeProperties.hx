@@ -60,7 +60,7 @@ class HaxePropertiesData implements InspectorBuild
 	/**
 		Choose how will Haxe classes be compiled
 	**/
-	@:isVar public var compilation:Comp;
+	public var compilation:Comp;
 
 	public var _:Space;
 
@@ -188,7 +188,7 @@ class HaxePropertiesData implements InspectorBuild
 		}
 
 		this.compilation = comp;
-		this.extraParams = buf.toString();
+		this.extraParams = buf.toString().trim();
 	}
 
 	function new()

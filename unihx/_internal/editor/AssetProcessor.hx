@@ -63,7 +63,7 @@ using StringTools;
 		{
 			refresh = true;
 			var comp = HaxeProperties.props();
-			var cmd = comp.compile(['--cwd',Sys.getCwd() + '/Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+			var cmd = comp.compile(['--cwd',Sys.getCwd() + '/Assets','build.hxml','--macro','unihx._internal.Compiler.compile()']);
 			if (cmd != null)
 			{
 				var sw = new cs.system.diagnostics.Stopwatch();

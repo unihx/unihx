@@ -238,24 +238,8 @@ class Macro
 				return null;
 			case TEnum(e,p):
 				var e = e.get();
-				// var docs = field.doc != null ? [ for (c in parseComments(field.doc)) (c.tag == null ? "" : c.tag.trim()) => c.contents.trim() ] : new Map();
-				// var label = docs.get('label');
-				// if (label == null)
-				// 	label = toSep(field.name, ' '.code);
-				// var tooltip = docs[''];
-				// var guiContent = if (tooltip == null)
-				// {
-				// 	macro new unityengine.GUIContent($v{label});
-				// } else {
-				// 	macro new unityengine.GUIContent($v{label}, $v{tooltip});
-				// }
-				// var opts = field.doc == null ? null : nativeArray(getOptions(docs, field.pos), pos);
-				// if (opts == null)
-				// 	opts = macro null;
-				// 	// opts = macro new cs.NativeArray(0);
 				etype = e;
 				pack = e.pack; name = e.name; params = p;
-				// return macro $ethis = ${exprFromEnum(ethis, e, type, guiContent, opts)};
 			case TInst(c,p):
 				var c = c.get();
 				pack = c.pack; name = c.name; params = p;
@@ -307,7 +291,8 @@ class Macro
 		var tooltip = docs[''];
 		var guiContent = if (tooltip == null)
 		{
-			macro $v{label};
+			// macro $v{label};
+			macro new unityengine.GUIContent($v{label});
 		} else {
 			macro new unityengine.GUIContent($v{label}, $v{tooltip});
 		}
@@ -480,7 +465,7 @@ class Macro
 		}
 		var eswitch = { expr:ESwitch(macro p2, cases, macro return null), pos: pos };
 		var expr = macro {
-			var popup = std.Type.enumIndex(current) + 1;
+			var popup = current == null ? 0 : std.Type.enumIndex(current) + 1;
 			var guiContent = ${nativeArray(guiContent,pos)};
 			var values = ${nativeArray(values,pos)};
 			var p2 = unityeditor.EditorGUILayout.IntPopup( label, popup, guiContent, values, opts );
@@ -504,6 +489,15 @@ class Macro
 
 	public static var enumHelpers = new Map();
 
+	static function __init__()
+	{
+		enumHelpers = new Map();
+		onMacroContextReused(function() {
+			enumHelpers = new Map();
+			return true;
+		});
+	}
+
 	private static function ensureEnumHelper(e:EnumType, type:Type, pos:Position):Expr
 	{
 		if (e.params.length > 0)
@@ -519,7 +513,9 @@ class Macro
 			}
 			td.name = e.name + "_Helper__";
 			td.pack = e.pack;
-			defineType(td);
+			try {
+				defineType(td);
+			} catch(e:Dynamic) { trace(e); }
 			enumHelpers[tname] = true;
 		}
 		// var t = try getType(tname + "_Helper__") catch(e:Dynamic) null;
