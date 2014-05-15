@@ -52,7 +52,7 @@ class Macro
 	}
 
 #if macro
-	public static function build():Array<Field>
+	public static function build(fieldName:Null<String>):Array<Field>
 	{
 		var fields = getBuildFields(),
 				pos = currentPos();
@@ -67,7 +67,7 @@ class Macro
 				continue;
 			switch f.kind {
 				case FVar(t,e):
-					if (!f.meta.exists(function(v) return v.name == ":skip"))
+					if (!f.meta.exists(function(v) return v.name == ":skip") && f.access.has(APublic))
 						addedFields.push(f);
 					if (e == null)
 					{
@@ -97,7 +97,7 @@ class Macro
 						f.kind = FVar(t,null);
 					}
 				case FProp(get,set,t,e):
-					if (!f.meta.exists(function(v) return v.name == ":skip"))
+					if (!f.meta.exists(function(v) return v.name == ":skip") && f.access.has(APublic))
 						addedFields.push(f);
 					if (e != null)
 					{
@@ -133,15 +133,19 @@ class Macro
 			if (f.name == "_")
 				f.name = "_" + i++;
 
-		if (fields.exists(function (cf) return cf.name == "OnGUI"))
+		if (fields.exists(function (cf) return cf.name == fieldName))
 		{
 			if (ctorAdded.length == 0 && f2.length == fields.length)
 				return null;
 		} else {
 			switch ComplexType.TAnonymous(addedFields).toType() {
 				case TAnonymous(_.get() => f):
+					var complex = getLocalType().toComplexType();
 					var allfields = [],
-							ethis = macro this;
+							ethis = if (fieldName == null)
+								macro ( (cast this.target) : $complex);
+							else
+								macro this;
 					var fs = [ for (f in f.fields) f.name => f ];
 					for (cf in addedFields)
 					{
@@ -154,8 +158,45 @@ class Macro
 						allfields.push(expr);
 					}
 					var block = { expr:EBlock(allfields), pos:pos };
-					var td = macro class { public function OnGUI() $block; };
-					f2.push(td.fields[0]);
+					var td = macro class extends unityeditor.Editor { @:overload public function OnGUI() $block; };
+
+					if (fieldName == null)
+					{
+						var cl = getLocalClass().get();
+						allfields.push(macro unityeditor.EditorUtility.SetDirty(this.target));
+						trace(block.toString());
+						switch macro @:meta(UnityEditor.CustomEditor(typeof($i{cl.name}))) "" {
+							case { expr:EMeta(m,_) }:
+								td.meta = [m];
+							case _: throw "assert";
+						}
+
+						if (cl.meta.has(':editMulti'))
+						{
+							switch macro @:meta(UnityEditor.CanEditMultipleObjects) "" {
+								case { expr:EMeta(m,_) }:
+									td.meta.push(m);
+								case _: throw "assert";
+							}
+						}
+
+						//define type
+						td.name = cl.name + '_Helper__';
+						td.pack = cl.pack.copy();
+						td.pack.push('editor');
+						td.fields[0].access.push(AOverride);
+						td.fields[0].name = "OnInspectorGUI";
+						if (cl.pack.length != 0)
+						{
+							cl.meta.add(':native', [macro $v{cl.name}], cl.pos);
+						}
+						try {
+							defineType(td);
+						} catch(e:Dynamic) { trace(e); }
+					} else {
+						td.fields[0].name = fieldName;
+						f2.push(td.fields[0]);
+					}
 				case _: throw "assert";
 			}
 		}
@@ -362,7 +403,7 @@ class Macro
 						type = parse(pack.join(".") + (pack.length == 0 ? name : "." + name),pos);
 				if (allowSceneObjects == null)
 					allowSceneObjects = false;
-				return macro $ethis = unityeditor.EditorGUILayout.ObjectField($guiContent, $ethis, cs.Lib.toNativeType($type), $v{allowSceneObjects}, $opts);
+				return macro $ethis = cast unityeditor.EditorGUILayout.ObjectField($guiContent, $ethis, cs.Lib.toNativeType($type), $v{allowSceneObjects}, $opts);
 			case _ if (field.type.unify( getType('unihx.inspector.InspectorBuild') )):
 				return macro if (ethis != null) $ethis.OnGUI();
 			case _ if (etype != null):
