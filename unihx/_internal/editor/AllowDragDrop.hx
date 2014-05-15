@@ -33,7 +33,9 @@ class AllowDragDrop extends Editor
 				DragAndDrop.visualMode = Link;
 				DragAndDrop.AcceptDrag();
 				Event.current.Use();
-				_target.gameObject.AddComponent(DragAndDrop.objectReferences[0].name);
+				var ret = _target.gameObject.AddComponent(DragAndDrop.objectReferences[0].name);
+				if (ret == null)
+					EditorUtility.DisplayDialog('Can\'t add script','Can\'t add script behaviour "${DragAndDrop.objectReferences[0].name}"',"OK");
 			case _:
 				super.OnInspectorGUI();
 		}

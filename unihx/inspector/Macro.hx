@@ -3,6 +3,8 @@ package unihx.inspector;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxe.macro.Context.*;
+import sys.FileSystem.*;
+
 using haxe.macro.Tools;
 using StringTools;
 using Lambda;
@@ -392,112 +394,137 @@ class Macro
 		return macro $tname.editorHelper($ethis, $label, $opts);
 	}
 
+	public static function buildEnumHelper(module:String, name:String)
+	{
+		var type = getModule(module).find(function(v) return switch(v.follow()) { case TEnum(e,_) if (e.get().name == name): true; case _: false; });
+		var e = switch type {
+			case TEnum(e,_):
+				e.get();
+			default:
+				throw new Error("assert: not an enum : " + name, currentPos());
+		};
+		var pos = currentPos();
+
+		// starting type definition
+		var etype = type.toComplexType();
+		var cases = [],
+				guiContent = [],
+				values = [];
+		var i = 0;
+		for (name in e.names)
+		{
+			var ctor = e.constructs.get(name);
+			var docs = ctor.doc != null ? [ for (c in parseComments(ctor.doc)) (c.tag == null ? "" : c.tag.trim() == "arg" ? c.tag.trim() + "-" + c.contents.trim().split(' ')[0] : c.tag.trim()) => c.contents.trim() ] : new Map();
+
+			var label = docs.get('label');
+			if (label == null)
+				label = toSep(ctor.name, ' '.code);
+			// var ct = macro $v{label};
+			var tooltip = docs[''];
+			var ct = if (tooltip == null)
+			{
+				macro new unityengine.GUIContent($v{label});
+			} else {
+				macro new unityengine.GUIContent($v{label}, $v{tooltip});
+			}
+			guiContent.push(ct);
+			values.push(macro $v{++i});
+			switch ctor.type.follow() {
+				case TEnum(_,_):
+					cases.push( { values:[macro $v{i}], expr:macro return ${parse( etype.toString() + '.' + name, pos )}, guard:null } );
+				case TFun(args,_):
+					var exprs = [{ expr:EVars([ for (arg in args) { name:arg.name, expr:macro cast null, type:null } ]), pos:pos } ];
+					exprs.push(macro unityeditor.EditorGUILayout.BeginHorizontal(null));
+					exprs.push(macro unityeditor.EditorGUILayout.Space());
+					exprs.push(macro unityeditor.EditorGUILayout.BeginVertical(null));
+					exprs.push({ expr:ESwitch(
+						macro current,
+						[{
+							values:[{ expr:ECall(macro $i{name}, [ for (arg in args) macro $i{arg.name + "_arg"} ]), pos:pos }],
+							expr: { expr:EBlock([ for (arg in args) macro $i{arg.name} = $i{arg.name + "_arg" } ]), pos: pos }
+						}],
+						macro null),
+					pos: pos });
+					exprs.push( { expr:EVars([ for (arg in args) { name:arg.name + "__changed", expr:macro $i{arg.name}, type:null } ]), pos:pos } );
+					for (arg in args)
+					{
+						var ret = exprFromType( (macro $i{arg.name + "__changed"}), {
+							name: arg.name,
+							type: arg.t,
+							isPublic: true,
+							params: [],
+							meta: null,
+							kind: FVar(AccNormal,AccNever),
+							expr: null,
+							pos: ctor.pos,
+							doc: docs['arg-' + arg.name]
+						});
+						if (ret != null)
+							exprs.push(ret);
+					};
+					exprs.push(macro unityeditor.EditorGUILayout.EndVertical());
+					exprs.push(macro unityeditor.EditorGUILayout.EndHorizontal());
+					var cond = macro popup != $v{i};
+					for (arg in args)
+						cond = macro $cond || !std.Type.enumEq($i{arg.name}, $i{arg.name + "__changed"});
+					exprs.push(
+							macro if ($cond)
+								return ${ { expr:ECall(parse( etype.toString() + '.' + name, pos ), [ for (arg in args) macro $i{arg.name+"__changed"} ]), pos:pos } };
+							else
+								return current
+					);
+					cases.push( { values:[macro $v{i}], expr: { expr:EBlock(exprs), pos:pos }, guard:null } );
+				case _:
+					throw "assert";
+			}
+		}
+		var eswitch = { expr:ESwitch(macro p2, cases, macro return null), pos: pos };
+		var expr = macro {
+			var popup = std.Type.enumIndex(current) + 1;
+			var guiContent = ${nativeArray(guiContent,pos)};
+			var values = ${nativeArray(values,pos)};
+			var p2 = unityeditor.EditorGUILayout.IntPopup( label, popup, guiContent, values, opts );
+			$eswitch;
+			return null;
+		};
+
+		var target = e.module.split('.').join('/') + ".hx";
+		for (path in getClassPath())
+		{
+			if (exists(path + "/" + target))
+			{
+				registerModuleDependency(getLocalModule(), path + "/" + target);
+				break;
+			}
+		}
+
+		var td = macro class { public static function editorHelper( current:Null<$etype>, label:unityengine.GUIContent, opts:cs.NativeArray<unityengine.GUILayoutOption> ) : Null<$etype> $expr; };
+		return td.fields;
+	}
+
+	public static var enumHelpers = new Map();
+
 	private static function ensureEnumHelper(e:EnumType, type:Type, pos:Position):Expr
 	{
 		if (e.params.length > 0)
 			throw new Error("Enum with type parameters is currently unsupported",pos);
 		var tname = e.pack.join('.') + (e.pack.length == 0 ? "" : ".") + e.name;
-		var t = try getType(tname + "__Helper__") catch(e:Dynamic) null;
-		if (t == null)
+		if (!enumHelpers[tname])
 		{
-			// starting type definition
-			var etype = type.toComplexType();
-			var cases = [],
-					guiContent = [],
-					values = [];
-			var i = 0;
-			for (name in e.names)
-			{
-				var ctor = e.constructs.get(name);
-				var docs = ctor.doc != null ? [ for (c in parseComments(ctor.doc)) (c.tag == null ? "" : c.tag.trim() == "arg" ? c.tag.trim() + "-" + c.contents.trim().split(' ')[0] : c.tag.trim()) => c.contents.trim() ] : new Map();
-
-				var label = docs.get('label');
-				if (label == null)
-					label = toSep(ctor.name, ' '.code);
-				// var ct = macro $v{label};
-				var tooltip = docs[''];
-				var ct = if (tooltip == null)
-				{
-					macro new unityengine.GUIContent($v{label});
-				} else {
-					macro new unityengine.GUIContent($v{label}, $v{tooltip});
-				}
-				guiContent.push(ct);
-				values.push(macro $v{++i});
-				switch ctor.type.follow() {
-					case TEnum(_,_):
-						cases.push( { values:[macro $v{i}], expr:macro return ${parse( etype.toString() + '.' + name, pos )}, guard:null } );
-					case TFun(args,_):
-						var exprs = [{ expr:EVars([ for (arg in args) { name:arg.name, expr:macro cast null, type:null } ]), pos:pos } ];
-						exprs.push(macro unityeditor.EditorGUILayout.BeginHorizontal(null));
-						exprs.push(macro unityeditor.EditorGUILayout.Space());
-						exprs.push(macro unityeditor.EditorGUILayout.BeginVertical(null));
-						exprs.push({ expr:ESwitch(
-							macro current,
-							[{
-								values:[{ expr:ECall(macro $i{name}, [ for (arg in args) macro $i{arg.name + "_arg"} ]), pos:pos }],
-								expr: { expr:EBlock([ for (arg in args) macro $i{arg.name} = $i{arg.name + "_arg" } ]), pos: pos }
-							}],
-							macro null),
-						pos: pos });
-						exprs.push( { expr:EVars([ for (arg in args) { name:arg.name + "__changed", expr:macro $i{arg.name}, type:null } ]), pos:pos } );
-						for (arg in args)
-						{
-							var ret = exprFromType( (macro $i{arg.name + "__changed"}), {
-								name: arg.name,
-								type: arg.t,
-								isPublic: true,
-								params: [],
-								meta: null,
-								kind: FVar(AccNormal,AccNever),
-								expr: null,
-								pos: ctor.pos,
-								doc: docs['arg-' + arg.name]
-							});
-							if (ret != null)
-								exprs.push(ret);
-						};
-						exprs.push(macro unityeditor.EditorGUILayout.EndVertical());
-						exprs.push(macro unityeditor.EditorGUILayout.EndHorizontal());
-						var cond = macro popup != $v{i};
-						for (arg in args)
-							cond = macro $cond || !std.Type.enumEq($i{arg.name}, $i{arg.name + "__changed"});
-						exprs.push(
-								macro if ($cond)
-									return ${ { expr:ECall(parse( etype.toString() + '.' + name, pos ), [ for (arg in args) macro $i{arg.name+"__changed"} ]), pos:pos } };
-								else
-									return current
-						);
-						cases.push( { values:[macro $v{i}], expr: { expr:EBlock(exprs), pos:pos }, guard:null } );
-					case _:
-						throw "assert";
-				}
+			var td = macro class { };
+			switch macro @:build(unihx.inspector.Macro.buildEnumHelper($v{e.module}, $v{e.name})) "" {
+				case { expr: EMeta(m,_) }:
+					td.meta = [m];
+				default: throw "assert";
 			}
-			var eswitch = { expr:ESwitch(macro p2, cases, macro return null), pos: pos };
-			var expr = macro {
-				var popup = std.Type.enumIndex(current) + 1;
-				var guiContent = ${nativeArray(guiContent,pos)};
-				var values = ${nativeArray(values,pos)};
-				var p2 = unityeditor.EditorGUILayout.IntPopup( label, popup, guiContent, values, opts );
-				$eswitch;
-				return null;
-			};
-			//create select
-			// macro {
-			// 	var popup = std.Type.enumIndex(current) + 1;
-			// 	switch EditorGUILayout.IntPopup( popup, $guiContent, $values, opts)
-			// 	{
-
-			// 	}
-			// };
-			// switch on select
-			// call expr
-			var td = macro class { public static function editorHelper( current:Null<$etype>, label:unityengine.GUIContent, opts:cs.NativeArray<unityengine.GUILayoutOption> ) : Null<$etype> $expr; };
-			td.name = e.name + "__Helper__";
+			td.name = e.name + "_Helper__";
 			td.pack = e.pack;
 			defineType(td);
+			enumHelpers[tname] = true;
 		}
-		return parse( tname + "__Helper__", pos );
+		// var t = try getType(tname + "_Helper__") catch(e:Dynamic) null;
+		// if (t == null)
+		return parse( tname + "_Helper__", pos );
 	}
 
 	private static function nativeArray(arr:Array<Expr>,pos:Position):Expr

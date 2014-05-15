@@ -2,6 +2,7 @@ package unihx._internal.editor;
 import haxe.ds.Vector;
 import sys.FileSystem.*;
 import haxe.io.Path;
+import unityengine.*;
 
 using StringTools;
 
@@ -13,7 +14,6 @@ using StringTools;
 			movedAssets:Vector<String>,
 			movedFromAssetPaths:Vector<String>)
 	{
-		trace(cs.Lib.array(cast importedAssets));
 		var sources = [],
 				deleted = [],
 				refresh = false;
@@ -59,13 +59,34 @@ using StringTools;
 		}
 		if (sources.length > 0)
 		{
-			trace("calling");
-			trace(Sys.environment());
 			refresh = true;
-			var cmd = new sys.io.Process('haxe',['--cwd',Sys.getCwd() + '/Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
-			trace(cmd.exitCode());
-			trace(cmd.stdout.readAll());
-			trace(cmd.stderr.readAll());
+			var comp = HaxeProperties.props();
+			var sw = new cs.system.diagnostics.Stopwatch();
+			sw.Start();
+			var cmd = comp.compile(['--cwd',Sys.getCwd() + '/Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+			if (cmd != null)
+			{
+				if (cmd.exitCode() != 0)
+					Debug.LogError("Haxe compilation failed.");
+				for (ln in cmd.stdout.readAll().toString().trim().split('\n'))
+				{
+					var ln = ln.trim();
+					if (ln != "")
+						Debug.Log(ln);
+				}
+				for (ln in cmd.stderr.readAll().toString().trim().split('\n'))
+				{
+					var ln = ln.trim();
+					if (ln == "") continue;
+					if (ln.startsWith('Warning'))
+						Debug.LogWarning(ln);
+					else
+						Debug.LogError(ln);
+				}
+			}
+			sw.Stop();
+			if (comp.verbose)
+				Debug.Log('Compilation ended (' + sw.Elapsed + ")" );
 		}
 		if (refresh)
 		{

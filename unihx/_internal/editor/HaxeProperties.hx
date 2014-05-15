@@ -26,12 +26,14 @@ class HaxeProperties extends EditorWindow
 
 	function OnDisable()
 	{
+		props().close();
 	}
 
 	function OnGUI()
 	{
 		var arr = new cs.NativeArray(1);
 		arr[0] = GUILayout.MaxHeight(300);
+		// arr[1] = GUILayout.MaxWidth(300);
 		GUILayout.BeginVertical(arr);
 		scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
 		props().OnGUI();
@@ -54,11 +56,14 @@ class HaxePropertiesData implements InspectorBuild
 	/**
 		Choose how will Haxe classes be compiled
 	**/
-	@:isVar public var compilation:Comp = CompilationServer(availablePort());
+	@:isVar public var compilation:Comp;
 
 	public var _:Space;
 
+	public var verbose:Bool;
+
 	/**
+		Extra Haxe parameters from build.hxml
 		@label Extra parameters
 	**/
 	public var _:ConstLabel;
@@ -69,6 +74,7 @@ class HaxePropertiesData implements InspectorBuild
 	**/
 	public var extraParams:TextArea;
 
+	private var compiler:HaxeCompiler;
 
 	private static var current:HaxePropertiesData;
 
@@ -90,40 +96,64 @@ class HaxePropertiesData implements InspectorBuild
 		return this;
 	}
 
+	public function compile(args)
+	{
+		if (compiler == null)
+			reload();
+		if (compiler == null)
+			compiler = new HaxeCompiler(compilation);
+
+		return compiler.compile(args);
+	}
+
+	public function close()
+	{
+		if (compiler != null)
+			compiler.close();
+		compiler = null;
+	}
+
 	public function save()
 	{
 		var w = sys.io.File.write('Assets/build.hxml');
+		if (extraParams == null || extraParams == "")
+			w.writeString("# Add your own compiler parameters here\n\n");
 		switch(compilation)
 		{
 			case CompilationServer(p):
 				if (p < 1024)
 					p = availablePort();
-				w.writeString('#--connect $p\nparams.hxml\n');
+				w.writeString('params.hxml\n#--connect $p\n');
 			case Compile:
 				w.writeString('params.hxml\n');
 			case DontCompile:
 		}
+		if (verbose)
+			w.writeString('#verbose\n');
+		w.writeString('\n');
 		if (extraParams != null)
 			w.writeString(extraParams);
 		w.close();
+
+		if (this.compiler == null || !Type.enumEq(this.compiler.props, this.compilation))
+		{
+			if (this.compiler != null)
+				this.compiler.close();
+			this.compiler = new HaxeCompiler(this.compilation);
+		}
 	}
 
 	private function reloadFrom(i:haxe.io.Input)
 	{
 		var comp = DontCompile,
 				buf = new StringBuf();
+		verbose = false;
 		try
 		{
 			var regex = ~/[ \t]+/g;
 			while(true)
 			{
 				var ln = i.readLine().trim();
-				if (!ln.startsWith("#--connect"))
-				{
-					var idx = ln.indexOf('#');
-					if (idx >= 0)
-						ln = ln.substr(0,idx - 1);
-				}
 				var cmd = regex.split(ln);
 				switch (cmd[0])
 				{
@@ -134,6 +164,8 @@ class HaxePropertiesData implements InspectorBuild
 						else
 							Std.parseInt(portCmd[1]);
 						comp = CompilationServer(port);
+					case '#verbose':
+						verbose = true;
 					case 'params.hxml':
 						if (comp == DontCompile)
 							comp = Compile;
@@ -144,6 +176,13 @@ class HaxePropertiesData implements InspectorBuild
 			}
 		}
 		catch(e:haxe.io.Eof) {}
+		if (this.compilation == null || !Type.enumEq(this.compilation,comp))
+		{
+			if (this.compiler != null)
+				this.compiler.close();
+			this.compiler = new HaxeCompiler(comp);
+		}
+
 		this.compilation = comp;
 		this.extraParams = buf.toString();
 	}

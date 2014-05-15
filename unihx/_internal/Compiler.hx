@@ -5,11 +5,9 @@ using StringTools;
 
 class Compiler
 {
-	macro public static function compile():Void
+	public static function compile():Void
 	{
 		var cwd = fullPath(haxe.io.Path.removeTrailingSlashes(Sys.getCwd()));
-		trace(cwd);
-		trace(Sys.systemName());
 		var asm = '../Library/ScriptAssemblies';
 		if (exists(asm))
 		{
@@ -27,7 +25,6 @@ class Compiler
 				continue;
 			else if (cp == "")
 				cp = ".";
-			trace(cp);
 			cp = fullPath(cp);
 			if (cp.startsWith(cwd))
 			{
