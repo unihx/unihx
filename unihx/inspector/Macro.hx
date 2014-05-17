@@ -54,6 +54,8 @@ class Macro
 #if macro
 	public static function build(fieldName:Null<String>):Array<Field>
 	{
+    if (defined('display'))
+      return null;
 		var fields = getBuildFields(),
 				pos = currentPos();
 		var addedFields = [];
@@ -164,7 +166,7 @@ class Macro
 					{
 						var cl = getLocalClass().get();
 						allfields.push(macro unityeditor.EditorUtility.SetDirty(this.target));
-						trace(block.toString());
+						// trace(block.toString());
 						switch macro @:meta(UnityEditor.CustomEditor(typeof($i{cl.name}))) "" {
 							case { expr:EMeta(m,_) }:
 								td.meta = [m];
@@ -186,6 +188,32 @@ class Macro
 						td.pack.push('editor');
 						td.fields[0].access.push(AOverride);
 						td.fields[0].name = "OnInspectorGUI";
+            f2 = f2.filter(function(f) {
+              if (f.meta.exists(function(m) return m.name == ":editor"))
+              {
+                switch (f.kind) {
+                  case FFun(fun) if (fun.expr != null):
+                    function map(e:Expr)
+                    {
+                      switch(e.expr)
+                      {
+                        case EConst(CIdent("this")):
+                          return ethis;
+                        case EConst(CIdent(id)):
+                          return try getTypedExpr( typeExpr(e) ) catch(exc:Dynamic) e;
+                        case _:
+                          return e.map(map);
+                      }
+                    }
+                    fun.expr = map(fun.expr);
+                  case _:
+                }
+                td.fields.push(f);
+                return false;
+              } else {
+                return true;
+              }
+            });
 						if (cl.pack.length != 0)
 						{
 							cl.meta.add(':native', [macro $v{cl.name}], cl.pos);
@@ -398,6 +426,14 @@ class Macro
 				return macro $ethis = unityeditor.EditorGUILayout.TextArea($ethis, $opts);
 			case 'Bool' if (pack.length == 0):
 				return macro $ethis = unityeditor.EditorGUILayout.Toggle($guiContent, $ethis, $opts);
+      case 'Button' if (inspector):
+        var e = macro $ethis = unityengine.GUILayout.Button($guiContent, $opts);
+        if (docs['onclick'] != null)
+        {
+          var parsed = parse(docs['onclick'], pos);
+          return macro if ($e) $parsed;
+        }
+        return e;
 			case _ if (field.type.unify( getType("unityengine.Object") )):
 				var allowSceneObjects = parseBool(docs['scene-objects']),
 						type = parse(pack.join(".") + (pack.length == 0 ? name : "." + name),pos);
