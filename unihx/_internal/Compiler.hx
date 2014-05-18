@@ -7,7 +7,7 @@ class Compiler
 {
 	public static function compile():Void
 	{
-		var cwd = fullPath(haxe.io.Path.removeTrailingSlashes(Sys.getCwd()));
+		var cwd = normalize(Sys.getCwd());
 		var asm = '../Library/ScriptAssemblies';
 		if (exists(asm))
 		{
@@ -18,24 +18,44 @@ class Compiler
 			}
 		}
 		// var files = [];
-		for (cp in Context.getClassPath())
+		var paths = [ for (p in Context.getClassPath()) if (normalize(p) != null) normalize(p) ];
+		for (i in 0...paths.length)
 		{
-			var cp = haxe.io.Path.removeTrailingSlashes(cp);
-			if (cp == null || !exists(cp))
-				continue;
-			else if (cp == "")
-				cp = ".";
-			cp = fullPath(cp);
+			var cp = paths[i];
 			if (cp.startsWith(cwd))
 			{
-				collect(cp);
+				collect(paths,i);
 			}
 		}
 		haxe.macro.Compiler.include('unihx._internal.editor');
 	}
 
-	private static function collect(cp:String,?pack)
+	private static function normalize(path:String)
 	{
+		if (path == "")
+			path = ".";
+		if (!exists(path))
+			return null;
+		try
+		{
+			var ret = fullPath(haxe.io.Path.removeTrailingSlashes(path));
+			switch (Sys.systemName())
+			{
+				case "Windows" | "Mac":
+					ret = ret.toLowerCase();
+				case _:
+			}
+			return ret;
+		}
+		catch(e:Dynamic)
+		{
+			return null;
+		}
+	}
+
+	private static function collect(cps:Array<String>, index:Int, ?pack)
+	{
+		var cp = cps[index];
 		var slash = "/",
 				dot = '.';
 		if (pack == null)
@@ -50,32 +70,24 @@ class Compiler
 			var path = path + "/" + file;
 			if (isDirectory(path))
 			{
-				pack.push(file);
-				collect(cp,pack);
-				pack.pop();
-			} else if (file.endsWith('.hx')) {
-				// files.push(pack.join('.') + dot + file.substr(0,-3));
-				var r = sys.io.File.read(path);
-				var hasPack = false;
-				try
+				var p = normalize(path),
+						found = false;
+				for (j in 0...cps.length)
 				{
-					while(true)
+					if (j != index && cps[j] == p)
 					{
-						var ln = r.readLine();
-						var idx = ln.indexOf('package');
-						if (idx >= 0)
-						{
-							hasPack = true;
-							var p = ln.substring(idx + 7, ln.indexOf(';',idx)).trim();
-							if (p == pack.join('.'))
-								Context.getModule(p + dot + file.substr(0,-3));
-							break;
-						}
+						found = true;
+						break;
 					}
 				}
-				catch(e:haxe.io.Eof) {}
-				if (!hasPack && pack.length == 0)
-					Context.getModule(pack.join('.') + dot + file.substr(0,-3));
+				if (!found)
+				{
+					pack.push(file);
+					collect(cps,index,pack);
+					pack.pop();
+				}
+			} else if (file.endsWith('.hx')) {
+				Context.getModule(pack.join('.') + dot + file.substr(0,-3));
 			}
 		}
 	}
