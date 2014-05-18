@@ -21,11 +21,12 @@ class HaxeProperties extends EditorWindow
 	function OnEnable()
 	{
 		trace('enable');
-		props().reload();
+		props();
 	}
 
 	function OnDisable()
 	{
+		trace('disable');
 		props().close();
 	}
 
@@ -42,9 +43,14 @@ class HaxeProperties extends EditorWindow
 		{
 			props().save();
 		}
+		if (GUILayout.Button("Reload",null))
+		{
+			props().reload();
+		}
 		if (GUILayout.Button("Force recompile",null))
 		{
 			props().compile(['--cwd',Sys.getCwd() + '/Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+			unityeditor.AssetDatabase.Refresh();
 		}
 		GUILayout.EndVertical();
 	}
@@ -112,31 +118,39 @@ class HaxePropertiesData implements InspectorBuild
 
 	public function close()
 	{
+		current = null;
 		if (compiler != null)
 			compiler.close();
 		compiler = null;
 	}
 
-	public function save()
+	private function getSaveContents()
 	{
-		var w = sys.io.File.write('Assets/build.hxml');
+		var b = new StringBuf();
 		if (extraParams == null || extraParams == "")
-			w.writeString("# Add your own compiler parameters here\n\n");
+			b.add("# Add your own compiler parameters here\n\n");
 		switch(compilation)
 		{
 			case CompilationServer(p):
 				if (p < 1024)
 					p = availablePort();
-				w.writeString('params.hxml\n#--connect $p\n');
+				b.add('params.hxml\n#--connect $p\n');
 			case Compile:
-				w.writeString('params.hxml\n');
+				b.add('params.hxml\n');
 			case DontCompile:
 		}
 		if (verbose)
-			w.writeString('#verbose\n');
-		w.writeString('\n');
+			b.add('#verbose\n');
+		b.add('\n');
 		if (extraParams != null)
-			w.writeString(extraParams);
+			b.add(extraParams);
+		return b.toString();
+	}
+
+	public function save()
+	{
+		var w = sys.io.File.write('Assets/build.hxml');
+		w.writeString(getSaveContents());
 		w.close();
 
 		if (this.compiler == null || !Type.enumEq(this.compiler.props, this.compilation))
