@@ -20,13 +20,11 @@ class HaxeProperties extends EditorWindow
 
 	function OnEnable()
 	{
-		trace('enable');
 		props();
 	}
 
 	function OnDisable()
 	{
-		trace('disable');
 		props().close();
 	}
 
