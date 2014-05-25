@@ -20,13 +20,11 @@ class HaxeProperties extends EditorWindow
 
 	function OnEnable()
 	{
-		trace('enable');
 		props();
 	}
 
 	function OnDisable()
 	{
-		trace('disable');
 		props().close();
 	}
 
@@ -49,7 +47,7 @@ class HaxeProperties extends EditorWindow
 		}
 		if (GUILayout.Button("Force recompile",null))
 		{
-			props().compile(['--cwd',Sys.getCwd() + '/Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+			props().compile(['--cwd',Sys.getCwd() + '/Assets','build.hxml','--macro','unihx._internal.Compiler.compile()']);
 			unityeditor.AssetDatabase.Refresh();
 		}
 		GUILayout.EndVertical();
@@ -134,9 +132,9 @@ class HaxePropertiesData implements InspectorBuild
 			case CompilationServer(p):
 				if (p < 1024)
 					p = availablePort();
-				b.add('params.hxml\n#--connect $p\n');
+				b.add('build.hxml\n#--connect $p\n');
 			case Compile:
-				b.add('params.hxml\n');
+				b.add('build.hxml\n');
 			case DontCompile:
 		}
 		if (verbose)

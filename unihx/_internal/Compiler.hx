@@ -88,6 +88,8 @@ class Compiler
 				}
 			} else if (file.endsWith('.hx')) {
 				Context.getModule(pack.join('.') + dot + file.substr(0,-3));
+			} else if (file.endsWith('.hxs')) {
+
 			}
 		}
 	}

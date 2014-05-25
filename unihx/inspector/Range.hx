@@ -12,7 +12,7 @@ package unihx.inspector;
 	public var minValue:Single;
 	public var maxValue:Single;
 
-	public function new(minLimit,maxLimit, ?minValue,?maxValue)
+	public function new(minLimit,maxLimit, ?minValue:Float,?maxValue:Float)
 	{
 		this.minLimit = minLimit;
 		this.maxLimit = maxLimit;
