@@ -16,12 +16,12 @@ import cs.StdTypes;
 
 	@:from @:extern inline public static function fromColor(c:Color):Color32
 	{
-		return Data.op_Implicit(c);
+		return new Color32(Std.int(c.r * 0xff), Std.int(c.g * 0xff), Std.int(c.b * 0xff), Std.int(c.a * 0xff));
 	}
 
 	@:to @:extern inline public function toColor():Color
 	{
-		return Data.op_Implicit(fromData(this));
+		return new Color(this.r / 0xff, this.g / 0xff, this.b / 0xff, this.a / 0xff);
 	}
 #end
 

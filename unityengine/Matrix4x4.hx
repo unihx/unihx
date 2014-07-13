@@ -13,7 +13,7 @@ package unityengine;
 		return Data.op_Multiply(a,b);
 	}
 
-	@:op(A*B) @:extern @:commutative inline public static function mulVector(a:Matrix4x4, b:Vector4):Matrix4x4
+	@:op(A*B) @:extern @:commutative inline public static function mulVector(a:Matrix4x4, b:Vector4):Vector4
 	{
 		return Data.op_Multiply(a,b);
 	}
