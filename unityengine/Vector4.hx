@@ -3,7 +3,7 @@ package unityengine;
 @:forward abstract Vector4(Data) from Data to Data
 {
 #if !macro
-	@:extern inline public function new(x:Single=.0,y:Single=.0,z:Single=.0,w:Single=1.)
+	@:extern inline public function new(x:Single=.0,y:Single=.0,z:Single=.0,w:Single=0.)
 	{
 		this = new Data(x,y,z,w);
 	}
@@ -25,12 +25,12 @@ package unityengine;
 
 	@:from @:extern inline public static function fromVec3(v:Vector3):Vector4
 	{
-		return new Vector4(v.x,v.y,v.z,1);
+		return new Vector4(v.x,v.y,v.z,0);
 	}
 
 	@:from @:extern inline public static function fromVec2(v:Vector2):Vector4
 	{
-		return new Vector4(v.x,v.y,0,1);
+		return new Vector4(v.x,v.y,0,0);
 	}
 
 	@:to @:extern inline public function toVec2():Vector2

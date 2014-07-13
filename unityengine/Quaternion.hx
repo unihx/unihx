@@ -5,7 +5,7 @@ package unityengine;
 #if !macro
 	@:extern inline public function new(x:Single,y:Single,z:Single,w:Single)
 	{
-		this = new Data(x,y);
+		this = new Data(x,y,z,w);
 	}
 
 	@:extern inline public static function fromData(data:Data):Quaternion
@@ -13,7 +13,7 @@ package unityengine;
 		return data;
 	}
 
-	@:op(A*B) @:extern @:commutative inline public static function mul(a:Quaternion, b:Single):Quaternion
+	@:op(A*B) @:extern inline public static function mul(a:Quaternion, b:Quaternion):Quaternion
 	{
 		return Data.op_Multiply(a,b);
 	}
