@@ -1,0 +1,51 @@
+package unityengine;
+
+@:final @:csNative @:native("UnityEngine.Rect") extern class RectData extends cs.system.ValueType
+{
+	var bottom(get,never) : Single;
+	var center(get,set) : Vector2;
+	var height(get,set) : Single;
+	var left(get,never) : Single;
+	var right(get,never) : Single;
+	var top(get,never) : Single;
+	var width(get,set) : Single;
+	var x(get,set) : Single;
+	var xMax(get,set) : Single;
+	var xMin(get,set) : Single;
+	var y(get,set) : Single;
+	var yMax(get,set) : Single;
+	var yMin(get,set) : Single;
+	@:final @:overload function new(left : Single, top : Single, width : Single, height : Single) : Void;
+	@:final @:overload function new(source : Rect) : Void;
+	@:final @:overload function Contains(point : Vector2) : Bool;
+	@:final @:overload function Contains(point : Vector3, allowInverse : Bool) : Bool;
+	@:final @:overload function Contains(point : Vector3) : Bool;
+	@:final @:overload function Overlaps(other : Rect) : Bool;
+	@:final @:overload function Overlaps(other : Rect, allowInverse : Bool) : Bool;
+	@:final @:overload function Set(left : Single, top : Single, width : Single, height : Single) : Void;
+	@:final @:overload private function get_bottom() : Single;
+	@:final @:overload private function get_center() : Vector2;
+	@:final @:overload private function get_height() : Single;
+	@:final @:overload private function get_left() : Single;
+	@:final @:overload private function get_right() : Single;
+	@:final @:overload private function get_top() : Single;
+	@:final @:overload private function get_width() : Single;
+	@:final @:overload private function get_x() : Single;
+	@:final @:overload private function get_xMax() : Single;
+	@:final @:overload private function get_xMin() : Single;
+	@:final @:overload private function get_y() : Single;
+	@:final @:overload private function get_yMax() : Single;
+	@:final @:overload private function get_yMin() : Single;
+	@:final @:overload private function set_center(value : Vector2) : Vector2;
+	@:final @:overload private function set_height(value : Single) : Single;
+	@:final @:overload private function set_width(value : Single) : Single;
+	@:final @:overload private function set_x(value : Single) : Single;
+	@:final @:overload private function set_xMax(value : Single) : Single;
+	@:final @:overload private function set_xMin(value : Single) : Single;
+	@:final @:overload private function set_y(value : Single) : Single;
+	@:final @:overload private function set_yMax(value : Single) : Single;
+	@:final @:overload private function set_yMin(value : Single) : Single;
+	@:final @:overload static function MinMaxRect(left : Single, top : Single, right : Single, bottom : Single) : Rect;
+	@:final @:overload static function op_Equality(lhs : Rect, rhs : Rect) : Bool;
+	@:final @:overload static function op_Inequality(lhs : Rect, rhs : Rect) : Bool;
+}

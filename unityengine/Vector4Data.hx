@@ -1,0 +1,51 @@
+package unityengine;
+
+@:final @:csNative @:native("UnityEngine.Vector4") extern class Vector4Data extends cs.system.ValueType
+{
+	var magnitude(get,never) : Single;
+	var normalized(get,never) : Vector4;
+	var sqrMagnitude(get,never) : Single;
+	var w : Single;
+	var x : Single;
+	var y : Single;
+	var z : Single;
+	@:final @:overload function new(x : Single, y : Single, z : Single, w : Single) : Void;
+	@:final @:overload function new(x : Single, y : Single) : Void;
+	@:final @:overload function new(x : Single, y : Single, z : Single) : Void;
+	@:final @:overload function Normalize() : Void;
+	@:final @:overload function Scale(scale : Vector4) : Void;
+	@:final @:overload function Set(new_x : Single, new_y : Single, new_z : Single, new_w : Single) : Void;
+	@:final @:overload function SqrMagnitude() : Single;
+	@:final @:overload function get_Item(index : Int) : Single;
+	@:final @:overload private function get_magnitude() : Single;
+	@:final @:overload private function get_normalized() : Vector4;
+	@:final @:overload private function get_sqrMagnitude() : Single;
+	@:final @:overload function set_Item(index : Int, value : Single) : Void;
+	static var kEpsilon(default,never) : Single;
+	static var one(get,never) : Vector4;
+	static var zero(get,never) : Vector4;
+	@:final @:overload static function Distance(a : Vector4, b : Vector4) : Single;
+	@:final @:overload static function Dot(a : Vector4, b : Vector4) : Single;
+	@:final @:overload static function Lerp(from : Vector4, to : Vector4, t : Single) : Vector4;
+	@:final @:overload static function Magnitude(a : Vector4) : Single;
+	@:final @:overload static function Max(lhs : Vector4, rhs : Vector4) : Vector4;
+	@:final @:overload static function Min(lhs : Vector4, rhs : Vector4) : Vector4;
+	@:final @:overload static function MoveTowards(current : Vector4, target : Vector4, maxDistanceDelta : Single) : Vector4;
+	@:final @:overload static function Project(a : Vector4, b : Vector4) : Vector4;
+	@:native("Normalize") @:final @:overload static function _Normalize(a : Vector4) : Vector4;
+	@:native("Scale") @:final @:overload static function _Scale(a : Vector4, b : Vector4) : Vector4;
+	@:native("SqrMagnitude") @:final @:overload static function _SqrMagnitude(a : Vector4) : Single;
+	@:final @:overload static private function get_one() : Vector4;
+	@:final @:overload static private function get_zero() : Vector4;
+	@:final @:overload static function op_Addition(a : Vector4, b : Vector4) : Vector4;
+	@:final @:overload static function op_Division(a : Vector4, d : Single) : Vector4;
+	@:final @:overload static function op_Equality(lhs : Vector4, rhs : Vector4) : Bool;
+	@:final @:overload static function op_Implicit(v : Vector3) : Vector4;
+	@:final @:overload static function op_Implicit(v : Vector4) : Vector2;
+	@:final @:overload static function op_Implicit(v : Vector2) : Vector4;
+	@:final @:overload static function op_Inequality(lhs : Vector4, rhs : Vector4) : Bool;
+	@:final @:overload static function op_Multiply(a : Vector4, d : Single) : Vector4;
+	@:final @:overload static function op_Multiply(d : Single, a : Vector4) : Vector4;
+	@:final @:overload static function op_Subtraction(a : Vector4, b : Vector4) : Vector4;
+	@:final @:overload static function op_UnaryNegation(a : Vector4) : Vector4;
+}

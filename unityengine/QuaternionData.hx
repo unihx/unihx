@@ -1,0 +1,53 @@
+package unityengine;
+
+@:final @:csNative @:native("UnityEngine.Quaternion") extern class QuaternionData extends cs.system.ValueType
+{
+	var eulerAngles(get,set) : Vector3;
+	var w : Single;
+	var x : Single;
+	var y : Single;
+	var z : Single;
+	@:final @:overload function new(x : Single, y : Single, z : Single, w : Single) : Void;
+	@:final @:overload function Set(new_x : Single, new_y : Single, new_z : Single, new_w : Single) : Void;
+	@:final @:overload function SetAxisAngle(axis : Vector3, angle : Single) : Void;
+	@:final @:overload function SetEulerAngles(x : Single, y : Single, z : Single) : Void;
+	@:final @:overload function SetEulerAngles(euler : Vector3) : Void;
+	@:final @:overload function SetEulerRotation(x : Single, y : Single, z : Single) : Void;
+	@:final @:overload function SetEulerRotation(euler : Vector3) : Void;
+	@:final @:overload function SetFromToRotation(fromDirection : Vector3, toDirection : Vector3) : Void;
+	@:final @:overload function SetLookRotation(view : Vector3) : Void;
+	@:final @:overload function SetLookRotation(view : Vector3, up : Vector3) : Void;
+	@:final @:overload function ToAngleAxis(angle : cs.Ref<Single>, axis : cs.Ref<Vector3>) : Void;
+	@:final @:overload function ToAxisAngle(axis : cs.Ref<Vector3>, angle : cs.Ref<Single>) : Void;
+	@:final @:overload function ToEuler() : Vector3;
+	@:final @:overload function ToEulerAngles() : Vector3;
+	@:final @:overload function get_Item(index : Int) : Single;
+	@:final @:overload private function get_eulerAngles() : Vector3;
+	@:final @:overload function set_Item(index : Int, value : Single) : Void;
+	@:final @:overload private function set_eulerAngles(value : Vector3) : Vector3;
+	static var identity(get,never) : Quaternion;
+	static var kEpsilon(default,never) : Single;
+	@:final @:overload static function Angle(a : Quaternion, b : Quaternion) : Single;
+	@:final @:overload static function AngleAxis(angle : Single, axis : Vector3) : Quaternion;
+	@:final @:overload static function AxisAngle(axis : Vector3, angle : Single) : Quaternion;
+	@:final @:overload static function Dot(a : Quaternion, b : Quaternion) : Single;
+	@:final @:overload static function Euler(x : Single, y : Single, z : Single) : Quaternion;
+	@:final @:overload static function Euler(euler : Vector3) : Quaternion;
+	@:final @:overload static function EulerAngles(x : Single, y : Single, z : Single) : Quaternion;
+	@:final @:overload static function EulerAngles(euler : Vector3) : Quaternion;
+	@:final @:overload static function EulerRotation(x : Single, y : Single, z : Single) : Quaternion;
+	@:final @:overload static function EulerRotation(euler : Vector3) : Quaternion;
+	@:final @:overload static function FromToRotation(fromDirection : Vector3, toDirection : Vector3) : Quaternion;
+	@:final @:overload static function Inverse(rotation : Quaternion) : Quaternion;
+	@:final @:overload static function Lerp(from : Quaternion, to : Quaternion, t : Single) : Quaternion;
+	@:final @:overload static function LookRotation(forward : Vector3, upwards : Vector3) : Quaternion;
+	@:final @:overload static function LookRotation(forward : Vector3) : Quaternion;
+	@:final @:overload static function RotateTowards(from : Quaternion, to : Quaternion, maxDegreesDelta : Single) : Quaternion;
+	@:final @:overload static function Slerp(from : Quaternion, to : Quaternion, t : Single) : Quaternion;
+	@:native("ToEulerAngles") @:final @:overload static function _ToEulerAngles(rotation : Quaternion) : Vector3;
+	@:final @:overload static private function get_identity() : Quaternion;
+	@:final @:overload static function op_Equality(lhs : Quaternion, rhs : Quaternion) : Bool;
+	@:final @:overload static function op_Inequality(lhs : Quaternion, rhs : Quaternion) : Bool;
+	@:final @:overload static function op_Multiply(lhs : Quaternion, rhs : Quaternion) : Quaternion;
+	@:final @:overload static function op_Multiply(rotation : Quaternion, point : Vector3) : Vector3;
+}

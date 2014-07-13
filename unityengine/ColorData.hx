@@ -1,0 +1,52 @@
+package unityengine;
+
+@:final @:csNative @:native("UnityEngine.Color") extern class ColorData extends cs.system.ValueType
+{
+	var a : Single;
+	var b : Single;
+	var g : Single;
+	var gamma(get,never) : Color;
+	var grayscale(get,never) : Single;
+	var linear(get,never) : Color;
+	var r : Single;
+	@:final @:overload function new(r : Single, g : Single, b : Single, a : Single) : Void;
+	@:final @:overload function new(r : Single, g : Single, b : Single) : Void;
+	@:final @:overload function get_Item(index : Int) : Single;
+	@:final @:overload private function get_gamma() : Color;
+	@:final @:overload private function get_grayscale() : Single;
+	@:final @:overload private function get_linear() : Color;
+	@:final @:overload function set_Item(index : Int, value : Single) : Void;
+	static var black(get,never) : Color;
+	static var blue(get,never) : Color;
+	static var clear(get,never) : Color;
+	static var cyan(get,never) : Color;
+	static var gray(get,never) : Color;
+	static var green(get,never) : Color;
+	static var grey(get,never) : Color;
+	static var magenta(get,never) : Color;
+	static var red(get,never) : Color;
+	static var white(get,never) : Color;
+	static var yellow(get,never) : Color;
+	@:final @:overload static function Lerp(a : Color, b : Color, t : Single) : Color;
+	@:final @:overload static private function get_black() : Color;
+	@:final @:overload static private function get_blue() : Color;
+	@:final @:overload static private function get_clear() : Color;
+	@:final @:overload static private function get_cyan() : Color;
+	@:final @:overload static private function get_gray() : Color;
+	@:final @:overload static private function get_green() : Color;
+	@:final @:overload static private function get_grey() : Color;
+	@:final @:overload static private function get_magenta() : Color;
+	@:final @:overload static private function get_red() : Color;
+	@:final @:overload static private function get_white() : Color;
+	@:final @:overload static private function get_yellow() : Color;
+	@:final @:overload static function op_Addition(a : Color, b : Color) : Color;
+	@:final @:overload static function op_Division(a : Color, b : Single) : Color;
+	@:final @:overload static function op_Equality(lhs : Color, rhs : Color) : Bool;
+	@:final @:overload static function op_Implicit(c : Color) : Vector4;
+	@:final @:overload static function op_Implicit(v : Vector4) : Color;
+	@:final @:overload static function op_Inequality(lhs : Color, rhs : Color) : Bool;
+	@:final @:overload static function op_Multiply(a : Color, b : Color) : Color;
+	@:final @:overload static function op_Multiply(b : Single, a : Color) : Color;
+	@:final @:overload static function op_Multiply(a : Color, b : Single) : Color;
+	@:final @:overload static function op_Subtraction(a : Color, b : Color) : Color;
+}
