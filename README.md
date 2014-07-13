@@ -19,6 +19,7 @@ You can see a demonstration of some of its features at http://waneck.github.io/w
  * Extend MonoBehaviour and code like you would with other Unity languages. Be sure to check the wwx presentation to get an idea of the types equivalence (e.g. C#'s array are cs.NativeArray in Haxe)
  * Use the `@:nativeGen` metadata to generate very clean code
  * Error positions always shown in the .hx code
+ * Operator overloading on core structures like Vector2, Vector3, Matrix4x4, Quaternion, etc. See more about it at [Core Structures](Core Structures)
  
 ## What still needs work
  * The HaxeBehaviour class is available, but some of its features demonstrated were proof-of-concept and are currently only accessible through the development branch.
