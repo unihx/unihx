@@ -8,6 +8,7 @@ import sys.FileSystem.*;
 
 using StringTools;
 
+@:nativeGen
 @:native('HaxeProperties')
 class HaxeProperties extends EditorWindow
 {
