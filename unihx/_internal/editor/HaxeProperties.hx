@@ -19,6 +19,29 @@ class HaxeProperties extends EditorWindow
 		EditorWindow.GetWindow(cs.Lib.toNativeType(HaxeProperties));
 	}
 
+	@:meta(UnityEditor.MenuItem("Assets/Create/Haxe Script"))
+	public static function createHaxeClass()
+	{
+		var path = AssetDatabase.GetAssetPath (Selection.activeObject);
+		if (path == "")
+		{
+			path = "Assets";
+		}
+
+		if (exists('$path/NewHaxeBehaviour.hx'))
+		{
+			var n = 0;
+			while (exists('$path/NewHaxeBehaviour${++n}.hx')) {}
+			path = '$path/NewHaxeBehaviour$n.hx';
+		} else {
+			path = '$path/NewHaxeBehaviour.hx';
+		}
+		sys.io.File.saveContent(path, 'import unityengine.*;\nclass NewHaxeBehaviour extends HaxeBehaviour\n{\n\tfunction Update()\n\t{\n\t}\n}');
+
+		unityeditor.AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+		EditorUtility.FocusProjectWindow();
+	}
+
 	function OnEnable()
 	{
 		props();
