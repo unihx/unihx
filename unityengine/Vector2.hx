@@ -64,6 +64,33 @@ package unityengine;
 	{
 		return unihx._internal.StructHelper.with(['x','y'], macro : unityengine.Vector2, ethis, obj);
 	}
+
+	public static var kEpsilon(get,never) : Single;
+	public static var one(get,never) : Vector2;
+	public static var right(get,never) : Vector2;
+	public static var up(get,never) : Vector2;
+	public static var zero(get,never) : Vector2;
+
+	inline static private function get_kEpsilon() : Single
+	{
+		return Data.kEpsilon;
+	}
+	inline static private function get_one() : Vector2
+	{
+		return Data.one;
+	}
+	inline static private function get_right() : Vector2
+	{
+		return Data.right;
+	}
+	inline static private function get_up() : Vector2
+	{
+		return Data.up;
+	}
+	inline static private function get_zero() : Vector2
+	{
+		return Data.zero;
+	}
 }
 
 private typedef Data =
