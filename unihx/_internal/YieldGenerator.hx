@@ -105,6 +105,7 @@ class YieldGenerator
 
 	inline function setUsed(id:Int)
 	{
+		trace('setting used',id,current.id);
 		var ret =usedVars[id];
 		if (ret == null)
 		{
@@ -250,6 +251,7 @@ class YieldGenerator
 		// get the variables that need to be changed
 		var changed = new Map(),
 				used = [ for (k in used.keys()) k => this.usedVars.get(k).count() ];
+		trace(used);
 		var external = [ for (ext in getLocalTVars()) ext.id => ext ];
 		for (ext in external)
 			used[ext.id] = 2; //mark as used
@@ -276,20 +278,71 @@ class YieldGenerator
 				cfg.block.push(mkGoto(cfg.next));
 			}
 			//TODO tryctx
-			var expr = getTypedExpr(mk_block(cfg.block));
+			var expr = getExprFromCg(mapVars(mk_block(cfg.block)));
 			ecases.push({ values:[{ expr:EConst(CInt(cfg.id + "")), pos:pos }], expr: expr });
 		}
-		var eswitch = { expr:ESwitch(macro this.eip, ecases, macro return false), pos:pos };
+		var eswitch = { expr:ESwitch(macro this.eip++, ecases, macro return false), pos:pos };
 		trace(eswitch.toString());
 
 		eswitch = macro while(true) $eswitch;
 
 		var extChanged = [ for (ext in external) if (changed.exists(ext.id)) ext ];
 		//create new() function
+		var nf = {
+			name: "new",
+			kind: FFun({
+				args: [ for (arg in extChanged) { name: arg.name, type: arg.t.toComplexType() } ],
+				ret: null,
+				expr: { expr:EBlock([ for (arg in extChanged) { var name = arg.name + "__" + arg.id; macro this.$name = $i{arg.name}; } ]), pos:pos }
+			}),
+			pos: pos
+		};
+
 		//create all changed fields
 		var cls = macro class Something extends unihx._internal.YieldBase {
+			override public function MoveNext():Bool
+				$eswitch;
 		};
-		return eswitch;
+		cls.fields.push(nf);
+		for (changed in changed)
+		{
+			cls.fields.push({
+				name:changed.name +"__" + changed.id,
+				kind: FVar(changed.t.toComplexType(),null),
+				pos: pos
+			});
+		}
+		defineType(cls);
+		return macro new Something();
+	}
+
+	function getExprFromCg(expr:TypedExpr):Expr
+	{
+		var ret = getTypedExpr(expr);
+		function map(e:Expr):Expr
+		{
+			return switch (e) {
+				case macro __goto__($i):
+					// we can avoid this call if i == next
+					macro this.eip = $i ;
+				case macro __goto_end__($i):
+					switch (i.expr)
+					{
+						case EConst(CInt(i)):
+							var i = Std.parseInt(i);
+							var theBlock = cfgs[i];
+							if (theBlock.next == null)
+								i = theBlock.id + 1;
+							else
+								i = theBlock.next;
+							macro this.eip = $v{i};
+						case _: throw "assert";
+					}
+				case _:
+					e.map(map);
+			}
+		}
+		return map(ret);
 	}
 
 	function mk_assign(e1:TypedExpr, e2:TypedExpr, pos:Position):TypedExpr

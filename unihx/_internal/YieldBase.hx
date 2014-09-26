@@ -11,7 +11,7 @@ class YieldBase #if !macro implements cs.system.collections.IEnumerator #end
 		return false;
 	}
 
-	private function get_Current():Dynamic
+	public function get_Current():Dynamic
 	{
 		return value;
 	}
@@ -24,5 +24,10 @@ class YieldBase #if !macro implements cs.system.collections.IEnumerator #end
 	public function next():Dynamic
 	{
 		return value;
+	}
+
+	public function Reset():Void
+	{
+		this.eip = 0;
 	}
 }
