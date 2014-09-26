@@ -8,16 +8,18 @@ using haxe.macro.ExprTools;
 using haxe.macro.TypeTools;
 using haxe.macro.TypedExprTools;
 using Lambda;
+using StringTools;
 
 class YieldGenerator
 {
+	static var packs = new Map();
 	var expr:TypedExpr;
-	var usedVars:Map<Int, Map<ControlGraph,ControlGraph>>;
+	var usedVars:Map<Int, Map<FlowGraph,FlowGraph>>;
 
 	// control flow graph
 	var id = -1;
-	var cfgs:Array<ControlGraph>;
-	var current:ControlGraph;
+	var cfgs:Array<FlowGraph>;
+	var current:FlowGraph;
 
 	var tbool:Type;
 	var tint:Type;
@@ -27,7 +29,9 @@ class YieldGenerator
 	var gotoEnd:TypedExpr;
 	var pos:Position;
 
-	public function new(e:Expr)
+	var pack:String;
+
+	public function new(pack:String, e:Expr)
 	{
 		var expr = typeExpr(macro { var __yield__:Dynamic = null; ${prepare(e)}; });
 		switch(expr.expr)
@@ -50,6 +54,8 @@ class YieldGenerator
 		this.goto = typeExpr( macro untyped __goto__ );
 		this.gotoEnd = typeExpr( macro untyped __goto_end__ );
 		this.pos = currentPos();
+
+		this.pack = pack;
 	}
 
 	static function prepare(e:Expr):Expr
@@ -71,9 +77,9 @@ class YieldGenerator
 		}
 	}
 
-	public static function make(e:Expr):Expr
+	public static function make(pack,e:Expr):Expr
 	{
-		return new YieldGenerator(e).change();
+		return new YieldGenerator(pack,e).change();
 	}
 
 	public static function getIterator(e:Expr):Expr
@@ -105,7 +111,6 @@ class YieldGenerator
 
 	inline function setUsed(id:Int)
 	{
-		trace('setting used',id,current.id);
 		var ret =usedVars[id];
 		if (ret == null)
 		{
@@ -129,14 +134,14 @@ class YieldGenerator
 		}
 	}
 
-	function mkGoto(id:Int):TypedExpr
+	function mkGoto(id:Int,final:Bool):TypedExpr
 	{
-		return { expr: TCall(goto, [{ expr:TConst(TInt(id)), t:tint, pos:pos }]), t:tdynamic, pos:pos };
+		return { expr: TCall(goto, [{ expr:TConst(TInt(id)), t:tint, pos:pos }, { expr:TConst(TBool(final)), t:tbool, pos:pos }]), t:tdynamic, pos:pos };
 	}
 
-	function mkGotoEnd(id:Int):TypedExpr
+	function mkGotoEnd(id:Int,final:Bool):TypedExpr
 	{
-		return { expr: TCall(gotoEnd, [{ expr:TConst(TInt(id)), t:tint, pos:pos }]), t:tdynamic, pos:pos };
+		return { expr: TCall(gotoEnd, [{ expr:TConst(TInt(id)), t:tint, pos:pos }, { expr:TConst(TBool(final)), t:tbool, pos:pos }]), t:tdynamic, pos:pos };
 	}
 
 	function mkNothing():TypedExpr
@@ -151,7 +156,7 @@ class YieldGenerator
 		from.pos = to.pos;
 	}
 
-	function tryJoin(with:ControlGraph):Null<ControlGraph>
+	function tryJoin(with:FlowGraph):Null<FlowGraph>
 	{
 		var ret = cfgs.pop();
 		var cur = this.current = cfgs[cfgs.length-1];
@@ -185,6 +190,7 @@ class YieldGenerator
 				var cur = current;
 				var endIf = mkNothing(),
 						endElse = mkNothing();
+				var deadEnds = [cur];
 				current.block.push( { expr: TIf(mk_not(econd), endIf, endElse), t:e.t, pos:e.pos } );
 				{
 					newFlow();
@@ -195,7 +201,8 @@ class YieldGenerator
 					{
 						replace(endElse, mk_block(j.block));
 					} else {
-						replace(endElse, mkGoto(ifId));
+						replace(endElse, mkGoto(ifId, true));
+						deadEnds.push(current);
 					}
 				}
 				if (eelse != null)
@@ -208,14 +215,21 @@ class YieldGenerator
 					{
 						replace(endIf, mk_block(j.block));
 					} else {
-						replace(endIf, mkGoto(elseId));
+						replace(endIf, mkGoto(elseId, true));
+						deadEnds.push(current);
 					}
+				}
+				if (cur.id != current.id)
+				{
+					newFlow();
+					for (d in deadEnds)
+						d.next = current.id;
 				}
 			case TCall( { expr:TLocal({ name:"__yield__" }) }, [ev]):
 				// return value
 				ensureNoYield(ev);
 				current.block.push( mk_assign( mk_this('value', ev.t, e.pos), ev, e.pos) );
-				current.block.push( mkGotoEnd( current.id ) );
+				current.block.push( mkGotoEnd( current.id, false ) );
 				// set to next
 				current.block.push( { expr: TReturn( { expr:TConst(TBool(true)), t:tbool, pos:e.pos } ), t:tbool, pos:e.pos } );
 				// break flow
@@ -251,16 +265,21 @@ class YieldGenerator
 		// get the variables that need to be changed
 		var changed = new Map(),
 				used = [ for (k in used.keys()) k => this.usedVars.get(k).count() ];
-		trace(used);
 		var external = [ for (ext in getLocalTVars()) ext.id => ext ];
 		for (ext in external)
 			used[ext.id] = 2; //mark as used
+		trace(used);
+		trace(external);
 		function mapVars(e:TypedExpr):TypedExpr
 		{
 			return switch (e.expr) {
 				case TLocal(v) if (used.get(v.id) > 1):
 					changed[v.id] = v;
+					trace('changing',v.name);
 					mk_this(v.name + "__" + v.id, v.t ,e.pos);
+				case TLocal(v):
+					trace('not changing', v.name, v.id, used.get(v.id));
+					e;
 				case TVar(v,eset) if (used.get(v.id) > 1):
 					changed[v.id] = v;
 					mk_assign( mk_this(v.name + "__" + v.id, v.t, e.pos), eset == null ? { expr: TConst(TNull), t:tdynamic, pos:e.pos } : mapVars(eset), e.pos);
@@ -272,16 +291,12 @@ class YieldGenerator
 		var ecases = [];
 		for (cfg in cfgs)
 		{
-			if (cfg.next != null)
-			{
-				//add mandatory goto next
-				cfg.block.push(mkGoto(cfg.next));
-			}
 			//TODO tryctx
-			var expr = getExprFromCg(mapVars(mk_block(cfg.block)));
+			var expr = getExprFromCg(cfg, cfg.block.map(mapVars));
 			ecases.push({ values:[{ expr:EConst(CInt(cfg.id + "")), pos:pos }], expr: expr });
 		}
-		var eswitch = { expr:ESwitch(macro this.eip++, ecases, macro return false), pos:pos };
+		trace(changed);
+		var eswitch = { expr:ESwitch(macro this.eip, ecases, macro return false), pos:pos };
 		trace(eswitch.toString());
 
 		eswitch = macro while(true) $eswitch;
@@ -299,7 +314,16 @@ class YieldGenerator
 		};
 
 		//create all changed fields
-		var cls = macro class Something extends unihx._internal.YieldBase {
+		var clsnum = packs.get(pack);
+		if (clsnum == null)
+		{
+			clsnum = 0;
+		}
+		packs[pack] = clsnum + 1;
+		var pack = pack.split('.'),
+				name = "__Yield_" + clsnum;
+
+		var cls = macro class extends unihx._internal.YieldBase {
 			override public function MoveNext():Bool
 				$eswitch;
 		};
@@ -312,20 +336,31 @@ class YieldGenerator
 				pos: pos
 			});
 		}
+		cls.name = name;
+		cls.pack = pack;
 		defineType(cls);
-		return macro new Something();
+		return { expr:ENew({ pack:pack, name: name }, [ for (arg in extChanged) macro $i{arg.name} ]), pos:pos };
 	}
 
-	function getExprFromCg(expr:TypedExpr):Expr
+	function getExprFromCg(cfg:FlowGraph, exprs:Array<TypedExpr>):Expr
 	{
-		var ret = getTypedExpr(expr);
+		if (exprs.length == 0)
+		{
+			exprs = [mkGotoEnd(cfg.id,false)];
+		} else switch (exprs[exprs.length-1].expr) {
+			case TReturn(_):
+			case TCall( { expr: TLocal(v) }, [_]) if (v.name.startsWith("__goto_")):
+			case _:
+				exprs.push(mkGotoEnd(cfg.id, false));
+		}
+		var ret = getTypedExpr(mk_block(exprs));
 		function map(e:Expr):Expr
 		{
 			return switch (e) {
-				case macro __goto__($i):
+				case macro __goto__($i, false):
 					// we can avoid this call if i == next
 					macro this.eip = $i ;
-				case macro __goto_end__($i):
+				case macro __goto_end__($i, false):
 					switch (i.expr)
 					{
 						case EConst(CInt(i)):
@@ -336,6 +371,22 @@ class YieldGenerator
 							else
 								i = theBlock.next;
 							macro this.eip = $v{i};
+						case _: throw "assert";
+					}
+				case macro __goto__($i, true):
+					// we can avoid this call if i == next
+					macro {this.eip = $i; continue; }
+				case macro __goto_end__($i, true):
+					switch (i.expr)
+					{
+						case EConst(CInt(i)):
+							var i = Std.parseInt(i);
+							var theBlock = cfgs[i];
+							if (theBlock.next == null)
+								i = theBlock.id + 1;
+							else
+								i = theBlock.next;
+							macro {this.eip = $v{i}; continue; };
 						case _: throw "assert";
 					}
 				case _:
@@ -371,10 +422,4 @@ class YieldGenerator
 	}
 }
 
-typedef ControlGraph = { block:Array<TypedExpr>, tryctx:Null<Int>, next:Null<Int>, id:Int, cancelledTo:Null<ControlGraph> };
-
-enum Next
-{
-	Next(id:Int);
-	EndOf(id:Int);
-}
+typedef FlowGraph = { block:Array<TypedExpr>, tryctx:Null<Int>, next:Null<Int>, id:Int, cancelledTo:Null<FlowGraph> };
