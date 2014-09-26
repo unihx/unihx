@@ -1,5 +1,6 @@
 package tests;
 import utest.Assert;
+import unihx._internal.YieldBase;
 
 class YieldTests
 {

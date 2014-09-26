@@ -6,4 +6,10 @@ class Yield
 	{
 		return YieldGenerator.getIterator(e);
 	}
+
+	// only typing helper
+	private static function __yield__<T>(t:T):T
+	{
+		return t;
+	}
 }

@@ -29,7 +29,15 @@ class YieldGenerator
 
 	public function new(e:Expr)
 	{
-		this.expr = typeExpr(changeFor(e));
+		var expr = typeExpr(macro { var __yield__:Dynamic = null; ${prepare(e)}; });
+		switch(expr.expr)
+		{
+			case TBlock(bl):
+				this.expr = bl[1];
+			default: throw "assert";
+		}
+		trace(this.expr.toString());
+
 		this.usedVars = new Map();
 		this.cfgs = [];
 		newFlow();
@@ -44,7 +52,7 @@ class YieldGenerator
 		this.pos = currentPos();
 	}
 
-	static function changeFor(e:Expr):Expr
+	static function prepare(e:Expr):Expr
 	{
 		return switch(e) {
 			case macro for ($v in $iterator) $block:
@@ -53,9 +61,13 @@ class YieldGenerator
 						i;
 					case _: throw new Error('Identifier expected in for var declaration', v.pos);
 				};
-				return macro { var y_iterator = unihx._internal.Yield.getIterator($iterator); while (y_iterator.hasNext()) { var $vname = y_iterator.next(); ${changeFor(block)} } };
+				return macro { var y_iterator = unihx._internal.Yield.getIterator($iterator); while (y_iterator.hasNext()) { var $vname = y_iterator.next(); ${prepare(block)} } };
+			case macro __yield__:
+				throw new Error("Reserved variable name: __yield__", e.pos);
+			case macro @yield $something:
+				return macro __yield__(${prepare(something)});
 			case _:
-				return e.map(changeFor);
+				return e.map(prepare);
 		}
 	}
 
@@ -105,10 +117,12 @@ class YieldGenerator
 	{
 		switch (e.expr)
 		{
-			case TMeta({ name:"yield" }, _):
+			case TCall( { expr:TLocal({ name:"__yield__" }) }, [e]):
 				throw new Error('A @yield cannot be used as an expression', e.pos);
 			case TLocal(v):
 				setUsed(v.id);
+			case TReturn(_):
+				throw new Error("Cannot return inside a 'yield' context", e.pos);
 			case _:
 				e.iter(ensureNoYield);
 		}
@@ -196,8 +210,20 @@ class YieldGenerator
 						replace(endIf, mkGoto(elseId));
 					}
 				}
+			case TCall( { expr:TLocal({ name:"__yield__" }) }, [ev]):
+				// return value
+				ensureNoYield(ev);
+				current.block.push( mk_assign( mk_this('value', ev.t, e.pos), ev, e.pos) );
+				current.block.push( mkGotoEnd( current.id ) );
+				// set to next
+				current.block.push( { expr: TReturn( { expr:TConst(TBool(true)), t:tbool, pos:e.pos } ), t:tbool, pos:e.pos } );
+				// break flow
+				newFlow();
+			case TReturn(_):
+				throw new Error("Cannot return inside a 'yield' context", e.pos);
+
 			case _:
-				e.iter(iter);
+				current.block.push(e);
 		}
 	}
 
@@ -232,14 +258,10 @@ class YieldGenerator
 			return switch (e.expr) {
 				case TLocal(v) if (used.get(v.id) > 1):
 					changed[v.id] = v;
-					mk_this(v,e.pos);
+					mk_this(v.name + "__" + v.id, v.t ,e.pos);
 				case TVar(v,eset) if (used.get(v.id) > 1):
 					changed[v.id] = v;
-					{
-						expr: TBinop(OpAssign, mk_this(v,e.pos), eset == null ? { expr: TConst(TNull), t:tdynamic, pos:e.pos } : mapVars(eset)),
-						t: tdynamic,
-						pos: e.pos
-					};
+					mk_assign( mk_this(v.name + "__" + v.id, v.t, e.pos), eset == null ? { expr: TConst(TNull), t:tdynamic, pos:e.pos } : mapVars(eset), e.pos);
 				case _:
 					e.map(mapVars);
 			}
@@ -257,7 +279,7 @@ class YieldGenerator
 			var expr = getTypedExpr(mk_block(cfg.block));
 			ecases.push({ values:[{ expr:EConst(CInt(cfg.id + "")), pos:pos }], expr: expr });
 		}
-		var eswitch = { expr:ESwitch(macro this.eip++, ecases, macro break), pos:pos };
+		var eswitch = { expr:ESwitch(macro this.eip, ecases, macro return false), pos:pos };
 		trace(eswitch.toString());
 
 		eswitch = macro while(true) $eswitch;
@@ -265,14 +287,19 @@ class YieldGenerator
 		var extChanged = [ for (ext in external) if (changed.exists(ext.id)) ext ];
 		//create new() function
 		//create all changed fields
-		var cls = macro class Something implements cs.system.IEnumerator {
+		var cls = macro class Something extends unihx._internal.YieldBase {
 		};
 		return eswitch;
 	}
 
-	function mk_this(v:TVar,pos:Position):TypedExpr
+	function mk_assign(e1:TypedExpr, e2:TypedExpr, pos:Position):TypedExpr
 	{
-		return { expr: TField({ expr:TConst(TThis), t:tdynamic, pos:pos }, FDynamic(v.name + "__" + v.id)), t: v.t, pos:pos };
+		return { expr: TBinop(OpAssign, e1, e2), t: e1.t, pos:pos };
+	}
+
+	function mk_this(name:String, t:Type, pos:Position):TypedExpr
+	{
+		return { expr: TField({ expr:TConst(TThis), t:tdynamic, pos:pos }, FDynamic(name)), t: t, pos:pos };
 	}
 
 	static function mk_paren(e:TypedExpr):TypedExpr
