@@ -7,6 +7,7 @@ import haxe.macro.Type;
 using haxe.macro.ExprTools;
 using haxe.macro.TypeTools;
 using haxe.macro.TypedExprTools;
+using haxe.macro.ComplexTypeTools;
 using Lambda;
 using StringTools;
 
@@ -330,6 +331,14 @@ class YieldGenerator
 				case TVar(v,eset) if (used.get(v.id) > 1):
 					changed[v.id] = v;
 					mk_assign( mk_this(v.name + "__" + v.id, v.t, e.pos), eset == null ? { expr: TConst(TNull), t:tdynamic, pos:e.pos } : mapVars(eset), e.pos);
+				case TField(_,( FInstance(_,cf) | FStatic(_,cf) )):
+					var cf = cf.get();
+					if (!cf.isPublic)
+					{
+						{ expr:TMeta({ name:":privateAccess", pos:e.pos}, e.map(mapVars)), t:e.t, pos:e.pos };
+					} else {
+						e.map(mapVars);
+					}
 				case _:
 					e.map(mapVars);
 			}
@@ -358,7 +367,7 @@ class YieldGenerator
 		var nf = {
 			name: "new",
 			kind: FFun({
-				args: [ for (arg in extChanged) { name: arg.name, type: arg.t.toComplexType() } ],
+				args: [ for (arg in extChanged) { name: arg.name, type: null } ],
 				ret: null,
 				expr: { expr:EBlock([ for (arg in extChanged) { var name = arg.name + "__" + arg.id; macro this.$name = $i{arg.name}; } ]), pos:pos }
 			}),
@@ -380,11 +389,14 @@ class YieldGenerator
 				$eswitch;
 		};
 		cls.fields.push(nf);
+		var pvtAcc = macro : unihx._internal.PrivateTypeAccess;
 		for (changed in changed)
 		{
+			var t2 = toComplexType(changed.t);
+			trace(changed.name, changed.t.toString(), t2.toString());
 			cls.fields.push({
 				name:changed.name +"__" + changed.id,
-				kind: FVar(changed.t.toComplexType(),null),
+				kind: FVar(t2,null),
 				pos: pos
 			});
 		}
@@ -476,6 +488,71 @@ class YieldGenerator
 	function mk_block(el:Array<TypedExpr>):TypedExpr
 	{
 		return { expr: TBlock(el), t: tdynamic, pos: el.length > 0 ? el[0].pos : pos };
+	}
+
+	// private static function texprToExpr(e:TypedExpr, used:Map<Int,Int>, changed:Map<Int,TVar>):Expr
+	// {
+	// 	function map(e:TypedExpr):Expr
+	// 	{
+	// 		return switch(e.expr) {
+	// 			case TLocal(v) if (used.get(v.id) > 1):
+	// 				changed[v.id] = v;
+	// 				var name = v.name + "__" + v.id;
+	// 				macro @:pos(e.pos) this.$name;
+	// 			case TVar(v,eset) if (used.get(v.id) > 1):
+	// 				changed[v.id] = v;
+	// 				var name = v.name + "__" + v.id;
+	// 				if (eset == null)
+	// 					macro @:pos(e.pos) this.$name = null;
+	// 				else
+	// 					macro @:pos(e.pos) this.$name = ${map(eset)};
+	// 			case TConst(_):
+	// 				e.
+	// 				| TLocal(_) | TBreak | TContinue:
+
+	// 		}
+	// 	}
+	// }
+
+	private static function toComplexType(t:Type):ComplexType
+	{
+		// we need this function because there are some types that aren't compatible with toComplexType
+		// for example, TMonos and private types
+		// For TMonos, we'll transform them into Dynamic; For private types, we'll use unihx._internal.PrivateTypeAccess
+		var params = null;
+		var isPrivate = switch (t.follow()) {
+			case TInst(_.get() => { isPrivate:true }, p):
+				params = p;
+				true;
+			case TEnum(_.get() => { isPrivate:true }, p):
+				params = p;
+				true;
+			case TAbstract(_.get() => { isPrivate:true }, p):
+				params = p;
+				true;
+			case TMono(_):
+				return macro : Dynamic;
+			case _:
+				false;
+		}
+		return if (isPrivate)
+		{
+			// use PrivateTypeAccess
+			var t = t.toString().split("<")[0];
+			var pvtAcc = macro : unihx._internal.PrivateTypeAccess;
+			switch (pvtAcc) {
+				case TPath(p):
+					p.params = [TPExpr( macro $v{t} )];
+					for (param in params)
+					{
+						p.params.push(TPType( toComplexType(param) ));
+					}
+				case _: throw "assert";
+			}
+			pvtAcc;
+		} else {
+			t.toComplexType();
+		}
 	}
 }
 

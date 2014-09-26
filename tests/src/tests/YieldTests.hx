@@ -503,4 +503,7 @@ class YieldTests
 			// trace(v);
 	}
 
+	//TODO test private access
+	//TODO test type parameter
+
 }
