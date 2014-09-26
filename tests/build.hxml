@@ -1,0 +1,8 @@
+-cp src
+-main TestAll
+-lib unihx
+-lib utest
+-debug
+-cs bin
+-cmd echo "======cs======"
+-cmd mono ./bin/bin/TestAll-Debug.exe

@@ -63,7 +63,7 @@ using StringTools;
 		{
 			refresh = true;
 			var comp = HaxeProperties.props();
-			var success = comp.compile(['--cwd',Sys.getCwd() + '/Assets','build.hxml','--macro','unihx._internal.Compiler.compile()']);
+			var success = comp.compile(['--cwd','./Assets','build.hxml','--macro','unihx._internal.Compiler.compile()']);
 		}
 		if (refresh)
 		{

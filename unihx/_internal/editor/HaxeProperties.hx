@@ -71,7 +71,7 @@ class HaxeProperties extends EditorWindow
 		}
 		if (GUILayout.Button("Force recompile",null))
 		{
-			props().compile(['--cwd',Sys.getCwd() + '/Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+			props().compile(['--cwd','./Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
 			unityeditor.AssetDatabase.Refresh();
 		}
 		GUILayout.EndVertical();
