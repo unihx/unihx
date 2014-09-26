@@ -107,7 +107,7 @@ class YieldGenerator
 
 	inline function newFlow()
 	{
-		var ret = { block:[], tryctx: current == null ? null : current.tryctx, id: ++id, next: null, cancelledTo: null };
+		var ret = { block:[], tryctx: current == null ? null : current.tryctx, id: ++id, next: null };
 		cfgs.push(ret);
 		current = ret;
 	}
@@ -175,23 +175,6 @@ class YieldGenerator
 		from.expr = to.expr;
 		from.t = to.t;
 		from.pos = to.pos;
-	}
-
-	function tryJoin(with:FlowGraph):Null<FlowGraph>
-	{
-		var ret = cfgs.pop();
-		var cur = this.current = cfgs[cfgs.length-1];
-		if (with.id != (ret.id - 1) || ret.tryctx != with.tryctx)
-		{
-			//cancel
-			cfgs.push(ret);
-			this.current = ret;
-			return null;
-		}
-
-		ret.cancelledTo = with;
-		this.id--;
-		return ret;
 	}
 
 	function iter(e:TypedExpr)
@@ -326,8 +309,6 @@ class YieldGenerator
 				for (cfg in usedVars[k])
 				{
 					var cfg = cfg;
-					while (cfg.cancelledTo != null)
-						cfg = cfg.cancelledTo;
 					cur[cfg.id] = true;
 				}
 			}
@@ -498,4 +479,4 @@ class YieldGenerator
 	}
 }
 
-typedef FlowGraph = { block:Array<TypedExpr>, tryctx:Null<Int>, next:Null<Int>, id:Int, cancelledTo:Null<FlowGraph> };
+typedef FlowGraph = { block:Array<TypedExpr>, tryctx:Null<Int>, next:Null<Int>, id:Int };
