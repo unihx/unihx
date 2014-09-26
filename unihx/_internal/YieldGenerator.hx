@@ -30,6 +30,10 @@ class YieldGenerator
 	var pos:Position;
 
 	var pack:String;
+	var condGraph:Null<Int>;
+
+	var onBreak:TypedExpr;
+	var onContinue:TypedExpr;
 
 	public function new(pack:String, e:Expr)
 	{
@@ -40,7 +44,6 @@ class YieldGenerator
 				this.expr = bl[1];
 			default: throw "assert";
 		}
-		trace(this.expr.toString());
 
 		this.usedVars = new Map();
 		this.cfgs = [];
@@ -94,7 +97,7 @@ class YieldGenerator
 					return macro $e.iterator();
 			case TInst(t,_):
 				if (t.get().findField('iterator') != null)
-					return macro $e.iterator;
+					return macro $e.iterator();
 				else
 					return e;
 			case _:
@@ -125,13 +128,31 @@ class YieldGenerator
 		{
 			case TCall( { expr:TLocal({ name:"__yield__" }) }, [e]):
 				throw new Error('A @yield cannot be used as an expression', e.pos);
-			case TLocal(v):
+			case TLocal(v) | TVar(v,_):
 				setUsed(v.id);
+				e.iter(ensureNoYield);
 			case TReturn(_):
 				throw new Error("Cannot return inside a 'yield' context", e.pos);
 			case _:
 				e.iter(ensureNoYield);
 		}
+	}
+
+	function hasYield(e:TypedExpr)
+	{
+		var has = false;
+		function iter(e:TypedExpr)
+		{
+			switch (e.expr)
+			{
+				case TCall( { expr:TLocal({ name:"__yield__" }) }, [e]):
+					has = true;
+				case _:
+					if (!has) e.iter(iter);
+			}
+		}
+		iter(e);
+		return has;
 	}
 
 	function mkGoto(id:Int,final:Bool):TypedExpr
@@ -177,6 +198,9 @@ class YieldGenerator
 	{
 		switch(e.expr)
 		{
+			case TVar(v,_) | TLocal(v):
+				setUsed(v.id);
+				current.block.push(e);
 			case TFunction(f):
 				ensureNoYield(e);
 				current.block.push(e);
@@ -185,46 +209,91 @@ class YieldGenerator
 					iter(e);
 			case TIf(econd,eif,eelse):
 				ensureNoYield(econd);
+				var yieldIf = hasYield(eif),
+						yieldElse = eelse != null && hasYield(eelse);
+				if (yieldIf || yieldElse)
+				{
+					// invert if and else  - if necessary
+					if (yieldIf && !yieldElse && eelse != null)
+					{
+						econd = mk_not(econd);
+						var tmp = eelse;
+						eelse = eif;
+						eif = tmp;
 
-				// if(!something) goto end
-				var cur = current;
-				var endIf = mkNothing(),
-						endElse = mkNothing();
-				var deadEnds = [cur];
-				current.block.push( { expr: TIf(mk_not(econd), endIf, endElse), t:e.t, pos:e.pos } );
-				{
-					newFlow();
-					var ifId = current.id;
+						yieldIf = false;
+						yieldElse = true;
+					}
+					// if (!cond) goto else;
+					var gotoElse = mkNothing();
+					current.block.push({ expr: TIf(mk_not(econd),gotoElse,null), t: tdynamic, pos: econd.pos });
+
+					// otherwise continue on eif
 					iter(eif);
-					var j = tryJoin(cur);
-					if (j != null) // can join
+					var endIfBlock = current;
+					// starting else
+					newFlow();
+					replace(gotoElse, mkGoto(current.id, true));
+
+					// make else block
+					if (eelse != null)
 					{
-						replace(endElse, mk_block(j.block));
-					} else {
-						replace(endElse, mkGoto(ifId, true));
-						deadEnds.push(current);
+						iter(eelse);
 					}
+					newFlow();
+
+					endIfBlock.next = current.id;
+				} else {
+					ensureNoYield(eif);
+					if (eelse != null)
+						ensureNoYield(eelse);
+					current.block.push(e);
 				}
-				if (eelse != null)
+
+			case TWhile(econd, block, normalWhile) if(hasYield(block)):
+				ensureNoYield(econd);
+
+				var prelude = null;
+				if (!normalWhile)
 				{
 					newFlow();
-					var elseId = current.id;
-					iter(eelse);
-					var j = tryJoin(cur);
-					if (j != null) // can join
-					{
-						replace(endIf, mk_block(j.block));
-					} else {
-						replace(endIf, mkGoto(elseId, true));
-						deadEnds.push(current);
-					}
+					prelude = current;
 				}
-				if (cur.id != current.id)
-				{
-					newFlow();
-					for (d in deadEnds)
-						d.next = current.id;
-				}
+				newFlow();
+				var lastOnBreak = onBreak,
+						lastOnContinue = onContinue;
+				onBreak = mkNothing();
+				onContinue = mkNothing();
+
+				// while condition
+				var condCfg = current;
+				var changedCond = { expr: TIf( mk_not(econd), onBreak, null ), t: tdynamic, pos:econd.pos };
+				iter(changedCond);
+
+				//body
+				newFlow();
+				var bodyCfg = current;
+				if (prelude != null)
+					prelude.next = bodyCfg.id;
+				iter(block);
+				current.next = condCfg.id;
+				newFlow();
+
+				//returning last loop
+				replace(onBreak,mkGoto(current.id,true));
+				replace(onContinue,mkGoto(condCfg.id,true));
+				trace(onBreak.toString());
+				this.onBreak = lastOnBreak;
+				this.onContinue = lastOnContinue;
+
+			case TBreak:
+				if (this.onBreak == null) throw new Error("Break outside loop",e.pos);
+				current.block.push(onBreak);
+			case TContinue:
+				if (this.onContinue == null) throw new Error("Continue outside loop",e.pos);
+				current.block.push(onContinue);
+
+			case TFor(_,_,_): throw new Error("Unexpected for",e.pos);
 			case TCall( { expr:TLocal({ name:"__yield__" }) }, [ev]):
 				// return value
 				ensureNoYield(ev);
@@ -238,6 +307,7 @@ class YieldGenerator
 				throw new Error("Cannot return inside a 'yield' context", e.pos);
 
 			case _:
+				ensureNoYield(e);
 				current.block.push(e);
 		}
 	}
@@ -268,17 +338,13 @@ class YieldGenerator
 		var external = [ for (ext in getLocalTVars()) ext.id => ext ];
 		for (ext in external)
 			used[ext.id] = 2; //mark as used
-		trace(used);
-		trace(external);
 		function mapVars(e:TypedExpr):TypedExpr
 		{
 			return switch (e.expr) {
 				case TLocal(v) if (used.get(v.id) > 1):
 					changed[v.id] = v;
-					trace('changing',v.name);
 					mk_this(v.name + "__" + v.id, v.t ,e.pos);
 				case TLocal(v):
-					trace('not changing', v.name, v.id, used.get(v.id));
 					e;
 				case TVar(v,eset) if (used.get(v.id) > 1):
 					changed[v.id] = v;
@@ -287,15 +353,20 @@ class YieldGenerator
 					e.map(mapVars);
 			}
 		}
+		trace(changed,used);
 		// create cases function
-		var ecases = [];
+		var ecases = [],
+				acc = [];
 		for (cfg in cfgs)
 		{
+			acc.push({ expr:EConst(CInt(cfg.id + "")), pos:pos });
+			if (cfg.block.length == 0 && cfg.next == null)
+				continue;
 			//TODO tryctx
 			var expr = getExprFromCg(cfg, cfg.block.map(mapVars));
-			ecases.push({ values:[{ expr:EConst(CInt(cfg.id + "")), pos:pos }], expr: expr });
+			ecases.push({ values:acc, expr: expr });
+			acc = [];
 		}
-		trace(changed);
 		var eswitch = { expr:ESwitch(macro this.eip, ecases, macro return false), pos:pos };
 		trace(eswitch.toString());
 
@@ -413,7 +484,12 @@ class YieldGenerator
 
 	function mk_not(e:TypedExpr):TypedExpr
 	{
-		return { expr: TUnop(OpNot, false, mk_paren(e)), t: tbool, pos: e.pos };
+		return switch(e.expr) {
+			case TUnop(OpNot, false, e):
+				e;
+			case _:
+				{ expr: TUnop(OpNot, false, mk_paren(e)), t: tbool, pos: e.pos };
+		}
 	}
 
 	function mk_block(el:Array<TypedExpr>):TypedExpr
