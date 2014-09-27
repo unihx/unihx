@@ -277,7 +277,9 @@ class YieldGenerator
 				if (this.onContinue == null) throw new Error("Continue outside loop",e.pos);
 				current.block.push(onContinue);
 
-			case TFor(_,_,_): throw new Error("Unexpected for",e.pos);
+			case TFor(_,_,_):
+				ensureNoYield(e);
+				current.block.push(e);
 			case TCall( { expr:TLocal({ name:"__yield__" }) }, [ev]):
 				// return value
 				ensureNoYield(ev);
@@ -320,29 +322,6 @@ class YieldGenerator
 		var external = [ for (ext in getLocalTVars()) ext.id => ext ];
 		for (ext in external)
 			used[ext.id] = 2; //mark as used
-		function mapVars(e:TypedExpr):TypedExpr
-		{
-			return switch (e.expr) {
-				case TLocal(v) if (used.get(v.id) > 1):
-					changed[v.id] = v;
-					mk_this(v.name + "__" + v.id, v.t ,e.pos);
-				case TLocal(v):
-					e;
-				case TVar(v,eset) if (used.get(v.id) > 1):
-					changed[v.id] = v;
-					mk_assign( mk_this(v.name + "__" + v.id, v.t, e.pos), eset == null ? { expr: TConst(TNull), t:tdynamic, pos:e.pos } : mapVars(eset), e.pos);
-				case TField(_,( FInstance(_,cf) | FStatic(_,cf) )):
-					var cf = cf.get();
-					if (!cf.isPublic)
-					{
-						{ expr:TMeta({ name:":privateAccess", pos:e.pos}, e.map(mapVars)), t:e.t, pos:e.pos };
-					} else {
-						e.map(mapVars);
-					}
-				case _:
-					e.map(mapVars);
-			}
-		}
 		trace(changed,used);
 		// create cases function
 		var ecases = [],
@@ -353,7 +332,7 @@ class YieldGenerator
 			if (cfg.block.length == 0 && cfg.next == null)
 				continue;
 			//TODO tryctx
-			var expr = getExprFromCg(cfg, cfg.block.map(mapVars));
+			var expr = getExprFromCg(cfg, used, changed);
 			ecases.push({ values:acc, expr: expr });
 			acc = [];
 		}
@@ -406,58 +385,20 @@ class YieldGenerator
 		return { expr:ENew({ pack:pack, name: name }, [ for (arg in extChanged) macro $i{arg.name} ]), pos:pos };
 	}
 
-	function getExprFromCg(cfg:FlowGraph, exprs:Array<TypedExpr>):Expr
+	function getExprFromCg(cfg:FlowGraph, used:Map<Int,Int>, changed:Map<Int,TVar>):Expr
 	{
+		var exprs = [ for (e in cfg.block) texprToExpr(e,used,changed) ];
 		if (exprs.length == 0)
 		{
-			exprs = [mkGotoEnd(cfg.id,false)];
-		} else switch (exprs[exprs.length-1].expr) {
-			case TReturn(_):
-			case TCall( { expr: TLocal(v) }, [_]) if (v.name.startsWith("__goto_")):
+			exprs = [texprToExpr(mkGotoEnd(cfg.id,false),used,changed)];
+		} else switch (exprs[exprs.length-1]) {
+			case macro return $_:
+			case macro this.eip = $_:
+			case macro continue:
 			case _:
-				exprs.push(mkGotoEnd(cfg.id, false));
+				exprs.push(texprToExpr(mkGotoEnd(cfg.id, false),used,changed));
 		}
-		var ret = getTypedExpr(mk_block(exprs));
-		function map(e:Expr):Expr
-		{
-			return switch (e) {
-				case macro __goto__($i, false):
-					// we can avoid this call if i == next
-					macro this.eip = $i ;
-				case macro __goto_end__($i, false):
-					switch (i.expr)
-					{
-						case EConst(CInt(i)):
-							var i = Std.parseInt(i);
-							var theBlock = cfgs[i];
-							if (theBlock.next == null)
-								i = theBlock.id + 1;
-							else
-								i = theBlock.next;
-							macro this.eip = $v{i};
-						case _: throw "assert";
-					}
-				case macro __goto__($i, true):
-					// we can avoid this call if i == next
-					macro {this.eip = $i; continue; }
-				case macro __goto_end__($i, true):
-					switch (i.expr)
-					{
-						case EConst(CInt(i)):
-							var i = Std.parseInt(i);
-							var theBlock = cfgs[i];
-							if (theBlock.next == null)
-								i = theBlock.id + 1;
-							else
-								i = theBlock.next;
-							macro {this.eip = $v{i}; continue; };
-						case _: throw "assert";
-					}
-				case _:
-					e.map(map);
-			}
-		}
-		return map(ret);
+		return { expr: EBlock(exprs), pos: pos };
 	}
 
 	function mk_assign(e1:TypedExpr, e2:TypedExpr, pos:Position):TypedExpr
@@ -490,29 +431,183 @@ class YieldGenerator
 		return { expr: TBlock(el), t: tdynamic, pos: el.length > 0 ? el[0].pos : pos };
 	}
 
-	// private static function texprToExpr(e:TypedExpr, used:Map<Int,Int>, changed:Map<Int,TVar>):Expr
-	// {
-	// 	function map(e:TypedExpr):Expr
-	// 	{
-	// 		return switch(e.expr) {
-	// 			case TLocal(v) if (used.get(v.id) > 1):
-	// 				changed[v.id] = v;
-	// 				var name = v.name + "__" + v.id;
-	// 				macro @:pos(e.pos) this.$name;
-	// 			case TVar(v,eset) if (used.get(v.id) > 1):
-	// 				changed[v.id] = v;
-	// 				var name = v.name + "__" + v.id;
-	// 				if (eset == null)
-	// 					macro @:pos(e.pos) this.$name = null;
-	// 				else
-	// 					macro @:pos(e.pos) this.$name = ${map(eset)};
-	// 			case TConst(_):
-	// 				e.
-	// 				| TLocal(_) | TBreak | TContinue:
+	private function texprToExpr(e:TypedExpr, used:Map<Int,Int>, changed:Map<Int,TVar>):Expr
+	{
+		function map(e:TypedExpr):Expr
+		{
+			return switch(e.expr) {
+				case TLocal(v) if (used.get(v.id) > 1):
+					changed[v.id] = v;
+					var name = v.name + "__" + v.id;
+					macro @:pos(e.pos) this.$name;
+				case TVar(v,eset) if (used.get(v.id) > 1):
+					changed[v.id] = v;
+					var name = v.name + "__" + v.id;
+					if (eset == null)
+						macro @:pos(e.pos) this.$name = null;
+					else
+						macro @:pos(e.pos) this.$name = ${map(eset)};
+				case TNew(c, params, el):
+					var complex = switch(toComplexType( TInst(c,params) )) {
+						case TPath(p):
+							p;
+						case _:
+							throw 'assert';
+					};
+					{ expr: ENew( complex, [ for (e in el) map(e) ]), pos: e.pos };
+				case TTypeExpr(m):
+					return exprModule(m, e.pos);
 
-	// 		}
-	// 	}
-	// }
+				case TCall({ expr:TLocal({ name: "__goto__" }) }, [i, final]):
+					switch(final.expr)
+					{
+						case TConst(TBool(true)):
+							macro @:pos(e.pos) { this.eip = ${map(i)}; continue; };
+
+						case TConst(TBool(false)):
+							macro @:pos(e.pos) this.eip = ${map(i)};
+						case _: throw new Error("Invalid goto expr", e.pos);
+					}
+				case TCall({ expr:TLocal({ name: "__goto_end__" }) }, [i, final]):
+					var block = switch (i.expr) {
+						case TConst(TInt(i)):
+							cfgs[i];
+						case _: throw "assert";
+					};
+					var i = if (block.next == null) block.id + 1; else block.next;
+					switch(final.expr)
+					{
+						case TConst(TBool(true)):
+							macro @:pos(e.pos) { this.eip = $v{i}; continue; };
+
+						case TConst(TBool(false)):
+							macro @:pos(e.pos) this.eip = $v{i};
+						case _: throw new Error("Invalid goto expr", e.pos);
+					}
+
+				// conversion boilerplate
+				case TConst(_):
+					getTypedExpr(e);
+				case TMeta({ name:":ast", params: [p] }, _):
+					p;
+				case TEnumParameter(e1,ef,idx):
+					// these are considered complex, so the AST is handled in TMeta(Meta.Ast)
+					throw new Error('assert', e.pos);
+				case TLocal(v):
+					macro @:pos(e.pos) $i{v.name};
+				case TBreak:
+					macro @:pos(e.pos) break;
+				case TContinue:
+					macro @:pos(e.pos) continue;
+				case TArray(e1,e2):
+					macro @:pos(e.pos) ${map(e1)}[${map(e2)}];
+				case TBinop(op,e1,e2):
+					{ expr: EBinop(op, map(e1), map(e2)), pos: e.pos };
+				case TField(e1, fa):
+					switch (fa) {
+						case FInstance(_,cf) | FStatic(_,cf) | FAnon(cf) | FClosure(_,cf):
+							var cf = cf.get();
+							var field = { expr: EField(map(e1), cf.name), pos:e.pos };
+							if (!cf.isPublic)
+								macro @:pos(e.pos) @:privateAccess $field;
+							else
+								field;
+						case FDynamic(s):
+							{ expr: EField(map(e1), s), pos:e.pos };
+						case FEnum(_,ef):
+							{ expr: EField(map(e1), ef.name), pos:e.pos };
+					}
+				case TParenthesis(e1):
+					{ expr: EParenthesis(map(e1)), pos: e.pos };
+				case TObjectDecl(fields):
+					{ expr: EObjectDecl([ for (f in fields) { field:f.name, expr:map(f.expr) } ]), pos: e.pos };
+				case TArrayDecl(el):
+					{ expr: EArrayDecl([ for (e in el) map(e) ]), pos: e.pos };
+				case TCall(e1, el):
+					{ expr: ECall( map(e1), [ for ( e in el ) map(e) ] ), pos: e.pos };
+				case TUnop(op,postFix,e1):
+					{ expr: EUnop(op, postFix, map(e1)), pos:e.pos };
+				case TFunction(tf):
+					{ expr: EFunction(null, { args:[for (arg in tf.args) { name: arg.v.name, type:toComplexType(arg.v.t) }], ret:toComplexType(tf.t), expr:tf.expr == null ? null : map(tf.expr) }), pos:e.pos };
+				case TVar(v, e1):
+					{ expr: EVars([{ name: v.name, type: toComplexType(v.t), expr: e1 == null ? null : map(e1) }]), pos: e.pos };
+				case TBlock(el):
+					{ expr: EBlock([ for (e in el) map(e) ]), pos:e.pos };
+				case TIf(econd,eif,eelse):
+					{ expr: EIf(map(econd), map(eif), eelse == null ? null : map(eelse)), pos: e.pos };
+				case TReturn(e1):
+					{ expr: EReturn(map(e1)), pos: e.pos };
+				case TThrow(e1):
+					{ expr: EThrow(map(e1)), pos: e.pos };
+				case TMeta(m, e1):
+					{ expr: EMeta(m, map(e1)), pos: e.pos };
+				case TWhile(econd,eblock,normal):
+					{ expr:EWhile(map(econd),map(eblock),normal), pos:e.pos };
+				case TCast(e1,_):
+					var t = toComplexType(e.t);
+					var e1 = map(e1);
+					macro @:pos(e.pos) ( (cast $e1) : $t );
+				case TFor(v,e1,e2):
+					var e1 = map(e1);
+					var e2 = map(e2);
+					{ expr: EFor(macro $i{v.name} in $e1, e2), pos:e.pos };
+				case TSwitch(econd, cases, edef):
+					{ expr: ESwitch( map(econd), [ for (c in cases) { values: [ for (e in c.values) map(e) ], expr: map(c.expr) } ], edef == null ? null : map(edef) ), pos:e.pos };
+				case TTry(etry, catches):
+					{ expr: ETry(map(etry), [ for (c in catches) { name: c.v.name, type: toComplexType(c.v.t), expr: map(c.expr) } ]), pos: e.pos };
+			}
+		}
+		return map(e);
+	}
+
+	private function exprModule(m:ModuleType,pos:Position):Expr
+	{
+		var base:BaseType = switch(m) {
+			case TClassDecl(c):
+				c.get();
+			case TEnumDecl(e):
+				e.get();
+			case TTypeDecl(t):
+				t.get();
+			case TAbstract(a):
+				a.get();
+		};
+		if (base.isPrivate)
+		{
+			// create a helper typedef
+			var clsnum = packs.get(pack);
+			if (clsnum == null)
+				clsnum = 0;
+			packs[pack] = clsnum + 1;
+			var pack = pack.split('.'),
+					name = base.name + "_Access_" + clsnum;
+			var tparams = [for(p in base.params) tdynamic];
+			var type = switch (m) {
+				case TClassDecl(c):
+					TInst(c,tparams);
+				case TEnumDecl(e):
+					TEnum(e,tparams);
+				case TTypeDecl(t):
+					TType(t,tparams);
+				case TAbstract(a):
+					TAbstract(a,tparams);
+			};
+
+			defineType({ pack:pack, name:name, pos:pos, kind: TDAlias( toComplexType(type) ), fields:[] });
+			if (pack.length == 0)
+				return macro @:pos(pos) $i{name};
+			var expr = macro @:pos(pos) $i{pack[0]};
+			for (i in 1...pack.length)
+			{
+				var p = pack[i];
+				expr = macro @:pos(pos) $expr.$p;
+			}
+			expr = macro @:pos(pos) $expr.$name;
+			return expr;
+		} else {
+			return getTypedExpr({ expr: TTypeExpr(m), t:tdynamic, pos:pos });
+		}
+	}
 
 	private static function toComplexType(t:Type):ComplexType
 	{
@@ -520,29 +615,31 @@ class YieldGenerator
 		// for example, TMonos and private types
 		// For TMonos, we'll transform them into Dynamic; For private types, we'll use unihx._internal.PrivateTypeAccess
 		var params = null;
-		var isPrivate = switch (t.follow()) {
-			case TInst(_.get() => { isPrivate:true }, p):
+		var base:BaseType = switch (t.follow()) {
+			case TInst(c,p):
 				params = p;
-				true;
-			case TEnum(_.get() => { isPrivate:true }, p):
+				c.get();
+			case TEnum(c,p):
 				params = p;
-				true;
-			case TAbstract(_.get() => { isPrivate:true }, p):
+				c.get();
+			case TAbstract(c,p):
 				params = p;
-				true;
+				c.get();
 			case TMono(_):
 				return macro : Dynamic;
 			case _:
-				false;
+				null;
 		}
-		return if (isPrivate)
+		return if (base != null && base.isPrivate)
 		{
 			// use PrivateTypeAccess
-			var t = t.toString().split("<")[0];
+			// var t = t.toString().split("<")[0];
+			var t = base.module,
+					name = base.name;
 			var pvtAcc = macro : unihx._internal.PrivateTypeAccess;
 			switch (pvtAcc) {
 				case TPath(p):
-					p.params = [TPExpr( macro $v{t} )];
+					p.params = [TPExpr( macro $v{t} ), TPExpr( macro $v{name} )];
 					for (param in params)
 					{
 						p.params.push(TPType( toComplexType(param) ));

@@ -20,8 +20,7 @@ class TestAll
 		};
 		var runner = new Runner();
 
-		// runner.addCase(new tests.YieldTests());
-		var x:unihx._internal.PrivateTypeAccess<"List","ListIterator",Int> = null;
+		runner.addCase(new tests.YieldTests());
 
 		var report = new utest.ui.text.PrintReport(runner);
 		runner.run();
