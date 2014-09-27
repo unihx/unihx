@@ -4,5 +4,5 @@
 -lib utest
 -debug
 -cs bin
--cmd echo "======cs======"
+-cmd echo "====== cs ======"
 -cmd mono ./bin/bin/TestAll-Debug.exe

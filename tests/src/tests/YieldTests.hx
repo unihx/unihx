@@ -10,11 +10,13 @@ class YieldTests
 	{
 	}
 
-	macro private static function test(expr:haxe.macro.Expr):haxe.macro.Expr
+	macro private static function test(expr:haxe.macro.Expr):haxe.macro.Expr.ExprOf<unihx._internal.YieldBase>
 	{
-		return unihx._internal.YieldGenerator.make('tests.unihx',expr);
+		var ret = unihx._internal.YieldGenerator.make('tests.unihx',expr);
+		return macro ($ret : unihx._internal.YieldBase);
 	}
 
+#if !macro
 	public function test_basic()
 	{
 		var t1 = test({
@@ -206,8 +208,7 @@ class YieldTests
 	public function test_fibonacci()
 	{
 		//returns the 10 first fibonacci numbers
-
-		var fib:Iterator<Dynamic> = test({
+		var fib = test({
 			var an2 = 0, an1 = 1;
 			@yield 0; @yield 1;
 			for (i in 0...8)
@@ -243,7 +244,7 @@ class YieldTests
 	public function test_fact()
 	{
 		//first 10 factorial numbers
-		var fact:Iterator<Dynamic> = test({
+		var fact = test({
 			var acc = 1;
 			@yield 1;
 			for (i in 1...10)
@@ -506,6 +507,9 @@ class YieldTests
 
 	//TODO test private access
 	//TODO test type parameter
-	//TODO test
+	//TODO test inline for
+	//TODO test that captured vars is kept to a minimum (checking Reflect.fields)
+	//
 
+#end
 }

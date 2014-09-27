@@ -65,13 +65,13 @@ class YieldGenerator
 	static function prepare(e:Expr):Expr
 	{
 		return switch(e) {
-			case macro for ($v in $iterator) $block:
-				var vname = switch(v.expr) {
-					case EConst(CIdent(i)):
-						i;
-					case _: throw new Error('Identifier expected in for var declaration', v.pos);
-				};
-				return macro { var y_iterator = unihx._internal.Yield.getIterator($iterator); while (y_iterator.hasNext()) { var $vname = y_iterator.next(); ${prepare(block)} } };
+			// case macro for ($v in $iterator) $block:
+			// 	var vname = switch(v.expr) {
+			// 		case EConst(CIdent(i)):
+			// 			i;
+			// 		case _: throw new Error('Identifier expected in for var declaration', v.pos);
+			// 	};
+			// 	return macro { var y_iterator = unihx._internal.Yield.getIterator($iterator); while (y_iterator.hasNext()) { var $vname = y_iterator.next(); ${prepare(block)} } };
 			case macro __yield__:
 				throw new Error("Reserved variable name: __yield__", e.pos);
 			case macro @yield $something:
@@ -277,9 +277,29 @@ class YieldGenerator
 				if (this.onContinue == null) throw new Error("Continue outside loop",e.pos);
 				current.block.push(onContinue);
 
-			case TFor(_,_,_):
-				ensureNoYield(e);
-				current.block.push(e);
+			case TFor(v,eit,eblock):
+				if (hasYield(eblock))
+				{
+					switch (typeExpr( macro var _iterator_ ).expr) {
+						case TVar(v2,_):
+							v2.t = eit.t;
+							iter({ expr:TVar(v2,eit), t:tdynamic, pos:eit.pos });
+							var local = { expr:TLocal(v2), t:eit.t, pos:eit.pos };
+
+							var wexpr = {
+								expr:TWhile(
+									{ expr:TCall( mk_field(local, 'hasNext', tdynamic), []), t:tbool, pos:eit.pos },
+									{ expr:TBlock([{ expr:TVar(v, { expr:TCall( mk_field(local, 'next', tdynamic), []), t:v.t, pos:eit.pos }), t:tdynamic, pos:eit.pos }, eblock]), t:tdynamic, pos:eblock.pos },
+									true),
+								t: tdynamic,
+								pos: e.pos };
+							iter(wexpr);
+						case _: throw 'assert';
+					}
+				} else {
+					ensureNoYield(e);
+					current.block.push(e);
+				}
 			case TCall( { expr:TLocal({ name:"__yield__" }) }, [ev]):
 				// return value
 				ensureNoYield(ev);
@@ -348,7 +368,7 @@ class YieldGenerator
 			kind: FFun({
 				args: [ for (arg in extChanged) { name: arg.name, type: null } ],
 				ret: null,
-				expr: { expr:EBlock([ for (arg in extChanged) { var name = arg.name + "__" + arg.id; macro this.$name = $i{arg.name}; } ]), pos:pos }
+				expr: { expr:EBlock([ for (arg in extChanged) { var name = getVarName(arg); macro this.$name = $i{arg.name}; } ]), pos:pos }
 			}),
 			pos: pos
 		};
@@ -374,7 +394,7 @@ class YieldGenerator
 			var t2 = toComplexType(changed.t);
 			trace(changed.name, changed.t.toString(), t2.toString());
 			cls.fields.push({
-				name:changed.name +"__" + changed.id,
+				name:getVarName(changed),
 				kind: FVar(t2,null),
 				pos: pos
 			});
@@ -404,6 +424,11 @@ class YieldGenerator
 	function mk_assign(e1:TypedExpr, e2:TypedExpr, pos:Position):TypedExpr
 	{
 		return { expr: TBinop(OpAssign, e1, e2), t: e1.t, pos:pos };
+	}
+
+	function mk_field(e:TypedExpr, field:String, type:Type):TypedExpr
+	{
+		return { expr: TField(e, FDynamic(field)), t:type, pos:e.pos };
 	}
 
 	function mk_this(name:String, t:Type, pos:Position):TypedExpr
@@ -438,11 +463,11 @@ class YieldGenerator
 			return switch(e.expr) {
 				case TLocal(v) if (used.get(v.id) > 1):
 					changed[v.id] = v;
-					var name = v.name + "__" + v.id;
+					var name = getVarName(v);
 					macro @:pos(e.pos) this.$name;
 				case TVar(v,eset) if (used.get(v.id) > 1):
 					changed[v.id] = v;
-					var name = v.name + "__" + v.id;
+					var name = getVarName(v);
 					if (eset == null)
 						macro @:pos(e.pos) this.$name = null;
 					else
@@ -633,7 +658,6 @@ class YieldGenerator
 		return if (base != null && base.isPrivate)
 		{
 			// use PrivateTypeAccess
-			// var t = t.toString().split("<")[0];
 			var t = base.module,
 					name = base.name;
 			var pvtAcc = macro : unihx._internal.PrivateTypeAccess;
@@ -650,6 +674,12 @@ class YieldGenerator
 		} else {
 			t.toComplexType();
 		}
+	}
+
+	private static function getVarName(v:TVar)
+	{
+		var name = if (v.name.startsWith('`')) 'tmp' else v.name;
+		return name + '__' + v.id;
 	}
 }
 
