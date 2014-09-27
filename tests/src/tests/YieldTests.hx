@@ -206,6 +206,7 @@ class YieldTests
 	public function test_fibonacci()
 	{
 		//returns the 10 first fibonacci numbers
+
 		var fib:Iterator<Dynamic> = test({
 			var an2 = 0, an1 = 1;
 			@yield 0; @yield 1;
