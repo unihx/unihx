@@ -17,6 +17,7 @@ class YieldTests
 	}
 
 #if !macro
+	/*
 	public function test_basic()
 	{
 		var t1 = test({
@@ -503,6 +504,118 @@ class YieldTests
 			// for (v in t)
 				// trace(v);
 		}
+	}
+	*/
+
+	public function test_pat_match()
+	{
+		var expr = macro 10 + 20 + 60 - 10;
+		var t = test({
+			var acc = 0;
+			while(true)
+			{
+				switch(expr.expr)
+				{
+					case EBinop(op,{ expr:EConst(CInt(x)) },{ expr:EConst(CInt(y)) }):
+						acc += Std.parseInt(x);
+						acc += Std.parseInt(y);
+						@yield { op:op + "", acc:acc, v:2 };
+						break;
+					case EBinop(op,e1,{ expr:EConst(CInt(x)) }):
+						acc += Std.parseInt(x);
+						@yield { op:op + "", acc:acc, v:1 };
+						expr = e1;
+					case _:
+						throw "argh: " + expr;
+				}
+			}
+		});
+		inline function getValue() return t.hasNext() ? t.next() : null;
+
+		Assert.same({ op:"OpSub", acc:10, v:1 }, getValue());
+		Assert.same({ op:"OpAdd", acc:70, v:1 }, getValue());
+		Assert.same({ op:"OpAdd", acc:100, v:2 }, getValue());
+		Assert.isFalse(t.hasNext());
+
+		expr = macro @:someMeta 50 + 5 - 10 + 20 + 60 - 10;
+		t = test({
+			var acc = 0;
+			while(true)
+			{
+				switch(expr.expr)
+				{
+					case EBinop(op,{ expr:EConst(CInt(x)) },{ expr:EConst(CInt(y)) }):
+						acc += Std.parseInt(x);
+						acc += Std.parseInt(y);
+						@yield { op:op + "", acc:acc, v:2 };
+						break;
+					case EBinop(op,e1 = { expr:EBinop(_,_,_) },{ expr:EConst(CInt(x)) }):
+						acc += Std.parseInt(x);
+						@yield { op:op + "", acc:acc, v:1 };
+						expr = e1;
+					case EBinop(op,e1,e2):
+						acc += 5;
+						@yield { op:"no const", acc:acc, v:0 };
+						switch(e1)
+						{
+							case macro notHere:
+								acc -= 10;
+							case macro @:someMeta $v:
+								switch(v.expr) {
+									case EConst(CInt(x)):
+										@yield { acc:acc, v:3 };
+										acc += Std.parseInt(x);
+										@yield { acc:acc, v:4 };
+									case _:
+										acc -= 100;
+										@yield acc;
+										acc -= 90;
+										@yield acc;
+								}
+							case _:
+								acc = 4;
+								@yield false;
+								trace(acc);
+								@yield acc;
+								acc -= 10;
+						}
+						acc += 5;
+						@yield { op:"finished", acc:acc, v:5 };
+						switch (e2) {
+							case { expr: EConst(CInt(x)) }:
+								@yield { acc:acc, v:6 };
+								acc += Std.parseInt(x);
+								@yield { acc:acc, v:7 };
+								acc = Std.parseInt(x);
+							case _:
+								acc = 0;
+								@yield false;
+								trace(acc);
+								@yield acc;
+								acc -= 10;
+						}
+						@yield { op:op + "", acc:acc, v:8 };
+						break;
+						@yield { op:op + "", acc:acc, v:9 };
+					case _:
+						throw "shouldnt be here: " + expr;
+				}
+			}
+		});
+		inline function getValue() return t.hasNext() ? t.next() : null;
+
+		Assert.same({ op:"OpSub", acc:10, v:1 }, getValue());
+		Assert.same({ op:"OpAdd", acc:70, v:1 }, getValue());
+		Assert.same({ op:"OpAdd", acc:90, v:1 }, getValue());
+		Assert.same({ op:"OpSub", acc:100, v:1 }, getValue());
+		Assert.same({ op:"no const", acc:105, v:0 }, getValue());
+		Assert.same({ acc:105, v:3 }, getValue());
+		Assert.same({ acc:155, v:4 }, getValue());
+		Assert.same({ op:"finished", acc:160, v:5 }, getValue());
+		Assert.same({ acc:160, v:6 }, getValue());
+		Assert.same({ acc:165, v:7 }, getValue());
+		Assert.same({ op:"OpAdd", acc:5, v:8 }, getValue());
+		Assert.isFalse(t.hasNext());
 	}
 
 	//TODO test private access

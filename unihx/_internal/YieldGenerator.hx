@@ -266,7 +266,6 @@ class YieldGenerator
 				//returning last loop
 				replace(onBreak,mkGoto(current.id,true));
 				replace(onContinue,mkGoto(condCfg.id,true));
-				trace(onBreak.toString());
 				this.onBreak = lastOnBreak;
 				this.onContinue = lastOnContinue;
 
@@ -276,6 +275,45 @@ class YieldGenerator
 			case TContinue:
 				if (this.onContinue == null) throw new Error("Continue outside loop",e.pos);
 				current.block.push(onContinue);
+
+			case TSwitch(econd,ecases,edef):
+				var cur = current,
+						curBlock = cur.block,
+						curNext = cur.next;
+				ensureNoYield(econd);
+				var currents = [cur];
+				for (c in ecases)
+				{
+					current = cur;
+					var bl = cur.block = [];
+					cur.next = id + 1;
+					for (v in c.values) ensureNoYield(v);
+					iter(c.expr);
+					c.expr = mk_block(bl);
+					currents.push(current);
+				}
+				if (edef != null)
+				{
+					current = cur;
+					var defs = cur.block = [];
+					cur.next = id + 1;
+					iter(edef);
+					edef = mk_block(defs);
+					currents.push(current);
+				}
+				current = cfgs[cfgs.length-1];
+
+				cur.next = curNext;
+				cur.block = curBlock;
+				curBlock.push({ expr:TSwitch(econd, ecases, edef), t:e.t, pos:e.pos });
+				if (cur != current)
+				{
+					newFlow();
+					for (c in currents)
+						c.next = current.id;
+				}
+			case TMeta(meta,e1):
+				iter(e1);
 
 			case TFor(v,eit,eblock):
 				if (hasYield(eblock))
@@ -304,7 +342,10 @@ class YieldGenerator
 				// return value
 				ensureNoYield(ev);
 				current.block.push( mk_assign( mk_this('value', ev.t, e.pos), ev, e.pos) );
-				current.block.push( mkGotoEnd( current.id, false ) );
+				if (current.next != null)
+					current.block.push( mkGoto( current.next, false ) );
+				else
+					current.block.push( mkGotoEnd( current.id, false ) );
 				// set to next
 				current.block.push( { expr: TReturn( { expr:TConst(TBool(true)), t:tbool, pos:e.pos } ), t:tbool, pos:e.pos } );
 				// break flow
@@ -342,7 +383,7 @@ class YieldGenerator
 		var external = [ for (ext in getLocalTVars()) ext.id => ext ];
 		for (ext in external)
 			used[ext.id] = 2; //mark as used
-		trace(changed,used);
+		// trace(changed,used);
 		// create cases function
 		var ecases = [],
 				acc = [];
@@ -357,7 +398,7 @@ class YieldGenerator
 			acc = [];
 		}
 		var eswitch = { expr:ESwitch(macro this.eip, ecases, macro return false), pos:pos };
-		trace(eswitch.toString());
+		// trace(eswitch.toString());
 
 		eswitch = macro while(true) $eswitch;
 
@@ -392,7 +433,7 @@ class YieldGenerator
 		for (changed in changed)
 		{
 			var t2 = toComplexType(changed.t);
-			trace(changed.name, changed.t.toString(), t2.toString());
+			// trace(changed.name, changed.t.toString(), t2.toString());
 			cls.fields.push({
 				name:getVarName(changed),
 				kind: FVar(t2,null),
@@ -516,8 +557,15 @@ class YieldGenerator
 				case TMeta({ name:":ast", params: [p] }, _):
 					p;
 				case TEnumParameter(e1,ef,idx):
+					var params = switch(ef.type.follow()) {
+						case TFun(args,_):args;
+						case _: throw 'assert';
+					};
+					var ecase = macro $i{ef.name},
+							c2 = { expr: ECall(ecase,[ for (i in 0...params.length) if (i == idx) macro val; else macro _ ]), pos:e.pos };
+					@:pos(e.pos) macro switch (${map(e1)}) { case $c2: val; default: throw 'assert'; };
 					// these are considered complex, so the AST is handled in TMeta(Meta.Ast)
-					throw new Error('assert', e.pos);
+					// throw new Error('assert', e.pos);
 				case TLocal(v):
 					macro @:pos(e.pos) $i{v.name};
 				case TBreak:
