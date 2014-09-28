@@ -13,7 +13,7 @@ install: # clone travis-hx repo and setup the target
   - haxelib dev unihx C:\projects\unihx
   - cinst wget -x86
   - cd \projects\unihx\tests
-  - wget "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoTmZDWDNBTWtIYjA" -O win32.tar.gz
+  - wget "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoTmZDWDNBTWtIYjA" -O win32.tar.gz --no-check-certificate
   - 7x x win32.tar.gz
   - 7x x win32.tar
 
