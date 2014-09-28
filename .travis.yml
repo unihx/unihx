@@ -27,6 +27,7 @@ script:
     # build the target. This will call haxe with the HXFLAGS and HXFLAGS_EXTRA environment variables
   - haxe build.hxml
   - mono --debug bin/bin/CmdTests-Debug.exe
+  - haxe build-unity.hxml
   - cp bin/bin/bin-Debug.dll ~/test.app/Contents/Data/Managed
   - cd ~
   - ./test.app/Contents/MacOS/test

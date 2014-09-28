@@ -1,6 +1,7 @@
 -cp src
--main CmdTests
 -lib unihx
 -lib utest
 -debug
 -cs bin
+-D dll
+UnityTests
