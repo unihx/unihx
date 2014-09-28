@@ -1,4 +1,3 @@
-# example appveyor.yml haxe configuration
 clone_folder: c:\projects\unihx
 
 environment:
@@ -23,15 +22,3 @@ script:
   - bin\bin\CmdTests-Debug.exe
   - copy bin\bin\bin-Debug.dll test_Data\Managed
   - test.exe
-
-script:
-  - cd $TRAVIS_BUILD_DIR/tests
-    # build the target. This will call haxe with the HXFLAGS and HXFLAGS_EXTRA environment variables
-  - haxe build.hxml
-  - mono --debug bin/bin/CmdTests-Debug.exe
-  - haxe build-unity.hxml
-  - cp bin/bin/bin-Debug.dll ~/test.app/Contents/Data/Managed
-  - cd ~
-  - ./test.app/Contents/MacOS/test
-
-
