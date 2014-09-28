@@ -1,0 +1,28 @@
+# example travis.yml haxe configuration
+language: objective-c # change this to c to test on a linux machine
+env:
+  global:
+    - OS=mac # add this too to let the script know that the OS is a mac
+      # - ARCH=i686 # add this to run in 32-bit mode. See availability at README
+  matrix:
+    - TARGET=cs
+  matrix:
+    fast_finish: true
+  allow_failures:
+    - env: SOME_ENV_HERE=some_opt
+  before_install: # clone travis-hx repo
+    - travis_retry git clone --depth=50 --branch=master git://github.com/waneck/travis-hx.git ~/travis-hx
+  install: # setup the target
+    - ~/travis-hx/setup.sh
+    - cd ~
+    - wget https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoQmpOYW44S2c3SU0 -O mac.tar.gz
+    - tar -zxf mac.tar.gz
+    - chmod +x test.app/Contents/MacOS/test
+  script:
+    - cd $TRAVIS_BUILD_DIR/tests
+      # build the target. This will call haxe with the HXFLAGS and HXFLAGS_EXTRA environment variables
+    - haxe build.hxml
+    - mono --debug bin/bin/CmdTests-Debug.exe
+    - cp bin/bin/bin-Debug.dll ~/test.app/Contents/Data/Managed
+    - cd ~
+    - ./test.app/Contents/MacOS/test
