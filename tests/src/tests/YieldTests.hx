@@ -811,11 +811,20 @@ class YieldTests
 		Assert.isFalse(t1.hasNext());
 	}
 
-	//TODO test inline for
+	//better naming for defined classes
+	public function test_naming()
+	{
+		var x = test({
+			@yield 1;
+			@yield 2;
+			@yield 3;
+		});
+
+		Assert.isTrue(Type.getClassName(Type.getClass(x)).indexOf('test_naming') >= 0);
+	}
 	//TODO test that captured vars is kept to a minimum (checking Reflect.fields)
 	//TODO test conflicting vars
 	//TODO test v_captured fail
-	//TODO add better naming for defined classes
 	//TODO test compilation server
 #end
 }

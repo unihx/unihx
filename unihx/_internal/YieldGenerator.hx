@@ -42,6 +42,7 @@ class YieldGenerator
 	var rethrow:Expr;
 
 	var thisUsed:Bool = false;
+	var infos:haxe.PosInfos;
 
 	public function new(pack:String, e:Expr)
 	{
@@ -79,6 +80,9 @@ class YieldGenerator
 			macro php.Lib.rethrow(exc);
 		else
 			macro throw exc;
+
+		this.infos = getHere(e.pos);
+		// trace(infos);
 	}
 
 	static function extractYield(e:Expr):Null<Expr>
@@ -534,7 +538,7 @@ class YieldGenerator
 		{
 			eswitch = macro while(true) $eswitch;
 		}
-		trace(eswitch.toString());
+		// trace(eswitch.toString());
 
 		var extChanged = [ for (ext in external) if (changed.exists(ext.id)) ext ];
 		if (thisUsed)
@@ -567,7 +571,7 @@ class YieldGenerator
 		}
 		packs[pack] = clsnum + 1;
 		var pack = pack.split('.'),
-				name = "__Yield_" + clsnum;
+				name = "_yield_" + (infos != null ? infos.className.split('.').pop() + "_" + infos.methodName + "_" + infos.lineNumber + "_": "" + clsnum);
 
 		var cls = macro class extends unihx._internal.YieldBase {
 			override public function MoveNext():Bool
@@ -712,6 +716,37 @@ class YieldGenerator
 	function mk_block(el:Array<TypedExpr>):TypedExpr
 	{
 		return { expr: TBlock(el), t: tdynamic, pos: el.length > 0 ? el[0].pos : pos };
+	}
+
+	static function getHere(pos:Position)
+	{
+		var expr = typeExpr(macro @:pos(pos) {
+			inline function here(?infos:haxe.PosInfos) return infos;
+			here();
+		});
+		var ret:haxe.PosInfos = null;
+		function getConst(e:TypedExpr):Dynamic {
+			return switch(e.expr) {
+				case TConst(TInt(i)): i;
+				case TConst(TString(s)): s;
+				case _: null;
+			}
+		}
+		function iter(e:TypedExpr)
+		{
+			switch(e.expr) {
+				case TObjectDecl(d):
+					ret = cast {};
+					for (arg in d)
+					{
+						Reflect.setField(ret,arg.name, getConst(arg.expr));
+					}
+				case _:
+					e.iter(iter);
+			}
+		}
+		iter(expr);
+		return ret;
 	}
 
 	function alloc_var(name:String, t:Type):TVar
