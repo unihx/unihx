@@ -16,7 +16,7 @@ before_install: # clone travis-hx repo
 install: # setup the target
   - ~/travis-hx/setup.sh
   - cd ~
-  - wget https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoQmpOYW44S2c3SU0 -O mac.tar.gz
+  - curl "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoQmpOYW44S2c3SU0" -o mac.tar.gz
   - tar -zxf mac.tar.gz
   - chmod +x test.app/Contents/MacOS/test
 
