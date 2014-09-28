@@ -81,20 +81,43 @@ class YieldGenerator
 			macro throw exc;
 	}
 
+	static function extractYield(e:Expr):Null<Expr>
+	{
+		var hasYield = false;
+		function map(e:Expr)
+		{
+			return switch(e.expr) {
+				case EBinop(op,e1,e2):
+					{ expr:EBinop(op, map(e1), e2), pos:e.pos };
+				case EUnop(op,post,e1):
+					{ expr:EUnop(op,post,map(e1)), pos:e.pos };
+				case EMeta({ name:'yield' }, e):
+					hasYield = true;
+					e;
+				case _:
+					e;
+			}
+		}
+		var ret = map(e);
+		if (hasYield)
+			return ret;
+		else
+			return null;
+	}
+
 	static function prepare(e:Expr):Expr
 	{
 		return switch(e) {
-			// case macro for ($v in $iterator) $block:
-			// 	var vname = switch(v.expr) {
-			// 		case EConst(CIdent(i)):
-			// 			i;
-			// 		case _: throw new Error('Identifier expected in for var declaration', v.pos);
-			// 	};
-			// 	return macro { var y_iterator = unihx._internal.Yield.getIterator($iterator); while (y_iterator.hasNext()) { var $vname = y_iterator.next(); ${prepare(block)} } };
 			case macro __yield__:
 				throw new Error("Reserved variable name: __yield__", e.pos);
 			case macro @yield $something:
 				return macro __yield__(${prepare(something)});
+			case { expr:EBinop(op,e1,e2) }:
+				var ret = extractYield(e);
+				if (ret == null)
+					e.map(prepare);
+				else
+					macro __yield__(${prepare( prepare(ret) )});
 			case _:
 				return e.map(prepare);
 		}
@@ -520,6 +543,11 @@ class YieldGenerator
 			extChanged.push(ethis);
 			changed[ethis.id] = ethis;
 		}
+
+		var tparams = new Map();
+		for (c in extChanged)
+			collectTParams(c.t, tparams);
+
 		//create new() function
 		var nf = {
 			name: "new",
@@ -560,6 +588,7 @@ class YieldGenerator
 				pos: pos
 			});
 		}
+		cls.params = [ for (k in tparams.keys()) { name:k } ];
 		cls.name = name;
 		cls.pack = pack;
 		defineType(cls);
@@ -935,6 +964,51 @@ class YieldGenerator
 		if (v.id == -1 && v.name == "this") return "parent";
 		var name = if (v.name.startsWith('`')) 'tmp' else v.name;
 		return name + '__' + v.id;
+	}
+
+	private static function collectTParams(type:Type, collected:Map<String,Type>)
+	{
+		while(true)
+		{
+			switch(type) {
+				case TMono(t):
+					var t = t.get();
+					if (t != null)
+					{
+						type = t;
+						continue;
+					}
+				case TEnum(_,params):
+					for (p in params) collectTParams(p,collected);
+				case TType(_,params):
+					for (p in params) collectTParams(p,collected);
+				case TFun(args,ret):
+					for (arg in args) collectTParams(arg.t,collected);
+					collectTParams(ret, collected);
+				case TAnonymous(a):
+					for (f in a.get().fields)
+						collectTParams(f.type,collected);
+				case TDynamic(t):
+					if (t != null)
+					{
+						type = t;
+						continue;
+					}
+				case TLazy(f):
+					type = f();
+				case TAbstract(_,params):
+					for (p in params) collectTParams(p,collected);
+				case TInst(_.get() => cl, params):
+					switch(cl.kind) {
+						case KTypeParameter(_):
+							collected[cl.name] = type;
+							return;
+						case _:
+					}
+					for (p in params) collectTParams(p,collected);
+			}
+			break;
+		}
 	}
 }
 

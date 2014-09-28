@@ -760,7 +760,57 @@ class YieldTests
 		this.someTest = "didCall";
 		return true;
 	}
-	//TODO test type parameter
+
+
+	//test type parameter
+	private function localTypeParam<T>(v:T, y:T)
+	{
+		return test({
+			@yield v;
+			@yield y;
+			@yield v == y;
+		});
+	}
+
+	public function test_tparam()
+	{
+		inline function getVal(t:Iterator<Dynamic>) return t.hasNext() ? t.next() : null;
+		var t1 = localTypeParam(10,20);
+		Assert.equals(10,getVal(t1));
+		Assert.equals(20,getVal(t1));
+		Assert.equals(false,getVal(t1));
+		Assert.isFalse(t1.hasNext());
+
+		t1 = localTypeParam('a','a');
+		Assert.equals('a',getVal(t1));
+		Assert.equals('a',getVal(t1));
+		Assert.equals(true,getVal(t1));
+		Assert.isFalse(t1.hasNext());
+
+		function fnTypeParam<X>(a:Array<X>)
+		{
+			return test({
+				var last = null;
+				for (v in a)
+				{
+					@yield v;
+					@yield v == last;
+					last = v;
+				}
+			});
+		}
+		t1 = fnTypeParam([1,2,1,1]);
+		Assert.equals(1,getVal(t1));
+		Assert.equals(false,getVal(t1));
+		Assert.equals(2,getVal(t1));
+		Assert.equals(false,getVal(t1));
+		Assert.equals(1,getVal(t1));
+		Assert.equals(false,getVal(t1));
+		Assert.equals(1,getVal(t1));
+		Assert.equals(true,getVal(t1));
+		Assert.isFalse(t1.hasNext());
+	}
+
 	//TODO test inline for
 	//TODO test that captured vars is kept to a minimum (checking Reflect.fields)
 	//TODO test conflicting vars
