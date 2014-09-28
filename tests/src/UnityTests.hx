@@ -29,7 +29,7 @@ class UnityTests
 		runner.run();
 
 		// ret.close();
+		unityengine.Application.Quit();
 		onEnd.Invoke(true);
-		Sys.exit(0);
 	}
 }
