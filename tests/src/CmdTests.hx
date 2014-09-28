@@ -1,7 +1,7 @@
 import utest.Runner;
 import utest.ui.Report;
 
-class TestAll
+class CmdTests
 {
 	static function main()
 	{

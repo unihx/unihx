@@ -1,8 +1,16 @@
 -cp src
--main TestAll
+-main CmdTests
 -lib unihx
 -lib utest
 -debug
 -cs bin
 -cmd echo "====== cs ======"
--cmd mono --debug ./bin/bin/TestAll-Debug.exe
+-cmd mono --debug ./bin/bin/CmdTests-Debug.exe
+--next
+-cp src
+-lib unihx
+-lib utest
+-debug
+-cs bin
+-D dll
+UnityTests
