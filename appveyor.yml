@@ -17,7 +17,7 @@ install: # clone travis-hx repo and setup the target
   - 7z x win32.tar.gz
   - 7z x win32.tar
 
-script:
+build_script:
   - cd \projects\unihx\tests
   - haxe build.hxml
   - bin\bin\CmdTests-Debug.exe
