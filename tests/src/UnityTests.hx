@@ -30,5 +30,6 @@ class UnityTests
 
 		// ret.close();
 		onEnd.Invoke(true);
+		Sys.exit(0);
 	}
 }
