@@ -8,7 +8,10 @@ class YieldTests
 {
 	public function new()
 	{
+		this.someTest = "someTest";
 	}
+
+	private var someTest:String;
 
 	macro private static function test(expr:haxe.macro.Expr):haxe.macro.Expr.ExprOf<unihx._internal.YieldBase>
 	{
@@ -700,13 +703,13 @@ class YieldTests
 		inline function getValue() return t.hasNext() ? t.next() : null;
 		Assert.same({ v:0, retn:"A", acc:110 }, getValue());
 		Assert.same({ v:1, retn:"B", acc:108 }, getValue());
-		//114
+
 		throwobj = "SomeString";
 		Assert.same({ v:2, retn:"String SomeString", acc:115 }, getValue());
 		Assert.same({ v:3, retn:"String", acc:6 }, getValue());
 		Assert.same({ v:4, retn:"String", acc:11 }, getValue());
 		Assert.same({ v:5, retn:"StringT2", acc:26 }, getValue());
-		//31
+
 		throwobj = new haxe.io.Eof();
 		Assert.equals(true,getValue());
 		Assert.same({ v:6, retn:"StringT3", acc:31 }, getValue());
@@ -729,12 +732,40 @@ class YieldTests
 		Assert.isFalse(t.hasNext());
 	}
 
-	//TODO test private access
+	//test private access
+	//test 'this'
+	private function test_pvt_access()
+	{
+		var t = test({
+			//this value get
+			var theValue = someTest;
+			@yield { v:1, val:theValue };
+			Assert.equals('someTest', theValue);
+			//this function call
+			@yield { v:2, val:pvtFunc() };
+			@yield { v:3, val:theValue != someTest };
+			@yield { v:4, val:someTest };
+		});
+
+		inline function getValue() return t.hasNext() ? t.next() : null;
+		Assert.same({ v:1, val:'someTest'}, getValue());
+		Assert.same({ v:2, val:true}, getValue());
+		Assert.same({ v:3, val:true}, getValue());
+		Assert.same({ v:4, val:'didCall'}, getValue());
+		Assert.isFalse(t.hasNext());
+	}
+
+	private function pvtFunc()
+	{
+		this.someTest = "didCall";
+		return true;
+	}
 	//TODO test type parameter
 	//TODO test inline for
 	//TODO test that captured vars is kept to a minimum (checking Reflect.fields)
-	//TODO test 'this'
 	//TODO test conflicting vars
 	//TODO test v_captured fail
+	//TODO add better naming for defined classes
+	//TODO test compilation server
 #end
 }

@@ -41,6 +41,8 @@ class YieldGenerator
 
 	var rethrow:Expr;
 
+	var thisUsed:Bool = false;
+
 	public function new(pack:String, e:Expr)
 	{
 		var expr = typeExpr(macro { var __yield__:Dynamic = null; ${prepare(e)}; });
@@ -444,7 +446,8 @@ class YieldGenerator
 			case TCall( { expr:TLocal({ name:"__yield__" }) }, [ev]):
 				// return value
 				ensureNoYield(ev);
-				current.block.push( mk_assign( mk_this('value', ev.t, e.pos), ev, e.pos) );
+				current.block.push( { expr:TMeta({name:"yield", params:[], pos:ev.pos}, ev), t: ev.t, pos:ev.pos } );
+				// current.block.push( mk_assign( mk_this('value', ev.t, e.pos), ev, e.pos) );
 				if (current.next != null)
 					current.block.push( mkGoto( current.next, false ) );
 				else
@@ -502,22 +505,28 @@ class YieldGenerator
 		}
 		var eswitch = { expr:ESwitch(macro this.eip, ecases, macro return false), pos:pos };
 
-		eswitch = macro try { $eswitch; } catch(e:Dynamic) { if (!this.handleError(e)) {$rethrow; return false;} };
+		eswitch = macro try { @:privateAccess $eswitch; } catch(exc:Dynamic) { if (!this.handleError(exc)) {$rethrow; return false;} };
 		// see if C#
 		if (!false)
 		{
 			eswitch = macro while(true) $eswitch;
 		}
-		// trace(eswitch.toString());
+		trace(eswitch.toString());
 
 		var extChanged = [ for (ext in external) if (changed.exists(ext.id)) ext ];
+		if (thisUsed)
+		{
+			var ethis = { id:-1, name:'this', t: typeof(macro this), capture:false, extra:null };
+			extChanged.push(ethis);
+			changed[ethis.id] = ethis;
+		}
 		//create new() function
 		var nf = {
 			name: "new",
 			kind: FFun({
-				args: [ for (arg in extChanged) { name: arg.name, type: null } ],
+				args: [ for (arg in extChanged) { name: getVarName(arg), type: null } ],
 				ret: null,
-				expr: { expr:EBlock([ for (arg in extChanged) { var name = getVarName(arg); macro this.$name = $i{arg.name}; } ]), pos:pos }
+				expr: { expr:EBlock([ for (arg in extChanged) { var name = getVarName(arg); macro this.$name = $i{name}; } ]), pos:pos }
 			}),
 			pos: pos
 		};
@@ -692,6 +701,11 @@ class YieldGenerator
 		function map(e:TypedExpr):Expr
 		{
 			return switch(e.expr) {
+				case TConst(TThis):
+					thisUsed = true;
+					return macro this.parent;
+				case TMeta({name:"yield"}, v):
+					return macro this.value = ${ map(v) };
 				case TLocal({ name:"__exc__" }):
 					return macro this.exc;
 				case TLocal(v) if (used.get(v.id) > 1):
@@ -774,7 +788,7 @@ class YieldGenerator
 							var cf = cf.get();
 							var field = { expr: EField(map(e1), cf.name), pos:e.pos };
 							if (!cf.isPublic)
-								macro @:pos(e.pos) @:privateAccess $field;
+								macro @:pos(e.pos) $field;
 							else
 								field;
 						case FDynamic(s):
@@ -918,6 +932,7 @@ class YieldGenerator
 
 	private static function getVarName(v:TVar)
 	{
+		if (v.id == -1 && v.name == "this") return "parent";
 		var name = if (v.name.startsWith('`')) 'tmp' else v.name;
 		return name + '__' + v.id;
 	}
