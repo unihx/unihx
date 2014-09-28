@@ -19,6 +19,18 @@ class YieldTests
 		return macro ($ret : unihx._internal.YieldBase);
 	}
 
+	macro private static function fails(e:haxe.macro.Expr)
+	{
+		try
+		{
+			haxe.macro.Context.typeof(e);
+			return macro false;
+		}
+		catch(e:Dynamic) {
+			return macro true;
+		}
+	}
+
 #if !macro
 	public function test_basic()
 	{
@@ -822,9 +834,20 @@ class YieldTests
 
 		Assert.isTrue(Type.getClassName(Type.getClass(x)).indexOf('test_naming') >= 0);
 	}
-	//TODO test that captured vars is kept to a minimum (checking Reflect.fields)
-	//TODO test conflicting vars
-	//TODO test v_captured fail
-	//TODO test compilation server
+
+	//TODO test v_captured fail - v_captured is only added later; see how to implement
+	// public function test_captured()
+	// {
+	// 	var x = 10;
+	// 	function testC()
+	// 	{
+	// 		return fails(test({
+	// 			@yield x;
+	// 			x = 20;
+	// 			@yield x;
+	// 		}));
+	// 	}
+	// 	Assert.isTrue(testC());
+	// }
 #end
 }

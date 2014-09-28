@@ -760,6 +760,7 @@ class YieldGenerator
 		}
 	}
 
+	var inswitch = false;
 	private function texprToExpr(e:TypedExpr, used:Map<Int,Int>, changed:Map<Int,TVar>):Expr
 	{
 		function map(e:TypedExpr):Expr
@@ -772,6 +773,8 @@ class YieldGenerator
 					return macro this.value = ${ map(v) };
 				case TLocal({ name:"__exc__" }):
 					return macro this.exc;
+				case TLocal(v) if (v.capture):
+					throw new Error('Cannot bind to captured variable ${v.name}',e.pos);
 				case TLocal(v) if (used.get(v.id) > 1):
 					changed[v.id] = v;
 					var name = getVarName(v);
@@ -794,14 +797,20 @@ class YieldGenerator
 				case TTypeExpr(m):
 					return exprModule(m, e.pos);
 
-				case TCall({ expr:TLocal({ name: "__goto__" }) }, [i, final]):
-					switch(final.expr)
+				case TCall({ expr:TLocal({ name: "__goto__" }) }, [{expr:TConst(TInt(i))}, final]):
+					var i = followId(i);
+					switch (final.expr)
 					{
+						case TConst(TBool(true)) if (!inswitch && defined('cs')):
+							var str = 'goto case $i';
+							if (i > getMaxId())
+								str = 'goto default';
+							macro @:pos(e.pos) untyped __cs__($v{str});
 						case TConst(TBool(true)):
-							macro @:pos(e.pos) { this.eip = ${map(i)}; continue; };
+							macro @:pos(e.pos) { this.eip = $v{i}; continue; };
 
 						case TConst(TBool(false)):
-							macro @:pos(e.pos) this.eip = ${map(i)};
+							macro @:pos(e.pos) this.eip = $v{i};
 						case _: throw new Error("Invalid goto expr", e.pos);
 					}
 				case TCall({ expr:TLocal({ name: "__goto_end__" }) }, [i, final]):
@@ -811,8 +820,14 @@ class YieldGenerator
 						case _: throw "assert";
 					};
 					var i = if (block.next == null) block.id + 1; else block.next;
+					i = followId(i);
 					switch(final.expr)
 					{
+						case TConst(TBool(true)) if (!inswitch && defined('cs')):
+							var str = 'goto case $i';
+							if (i > getMaxId())
+								str = 'goto default';
+							macro @:pos(e.pos) untyped __cs__($v{str});
 						case TConst(TBool(true)):
 							macro @:pos(e.pos) { this.eip = $v{i}; continue; };
 
@@ -895,7 +910,11 @@ class YieldGenerator
 					var e2 = map(e2);
 					{ expr: EFor(macro $i{v.name} in $e1, e2), pos:e.pos };
 				case TSwitch(econd, cases, edef):
-					{ expr: ESwitch( map(econd), [ for (c in cases) { values: [ for (e in c.values) map(e) ], expr: map(c.expr) } ], edef == null ? null : map(edef) ), pos:e.pos };
+					var last = inswitch;
+					inswitch = true;
+					var ret = { expr: ESwitch( map(econd), [ for (c in cases) { values: [ for (e in c.values) map(e) ], expr: map(c.expr) } ], edef == null ? null : map(edef) ), pos:e.pos };
+					inswitch = last;
+					ret;
 				case TTry(etry, catches):
 					{ expr: ETry(map(etry), [ for (c in catches) { name: c.v.name, type: toComplexType(c.v.t), expr: map(c.expr) } ]), pos: e.pos };
 			}
@@ -1044,6 +1063,33 @@ class YieldGenerator
 			}
 			break;
 		}
+	}
+
+	private function getMaxId()
+	{
+		var max = 0;
+		var len = cfgs.length;
+		while (len --> 0)
+		{
+			var c = cfgs[len];
+			max = c.id;
+			if (c.block.length != 0 || c.next != null)
+			{
+				break;
+			}
+		}
+		return max;
+	}
+
+	private function followId(i:Int)
+	{
+		var cfg = cfgs[i];
+		while (cfg != null && cfg.block.length == 0 && cfg.next != null)
+		{
+			cfg = cfgs[cfg.next];
+			i = cfg.id;
+		}
+		return i;
 	}
 }
 
