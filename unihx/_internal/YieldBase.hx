@@ -5,25 +5,38 @@ class YieldBase #if !macro implements cs.system.collections.IEnumerator #end
 	@:property public var Current(get,never):Dynamic;
 	private var eip:Int = 0;
 	private var value:Dynamic;
+	private var exc:Dynamic;
 
 	public function MoveNext():Bool
 	{
 		return false;
 	}
 
-	public function get_Current():Dynamic
+	inline public function get_Current():Dynamic
 	{
 		return value;
 	}
 
-	public function hasNext():Bool
+	inline public function hasNext():Bool
 	{
 		return MoveNext();
 	}
 
-	public function next():Dynamic
+	inline public function next():Dynamic
 	{
 		return value;
+	}
+
+	/**
+		This function will be called internally by the handler to see if an exception
+		can be handled. It will work like a MoveNext() call.
+
+		If the handler returns false, the enumerator will be in a 'errored' state and will not return any more values
+	**/
+	public function handleError(exc:Dynamic):Bool
+	{
+		this.eip = -1; //error state
+		return false;
 	}
 
 	public function Reset():Void

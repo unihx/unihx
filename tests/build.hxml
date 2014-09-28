@@ -5,4 +5,4 @@
 -debug
 -cs bin
 -cmd echo "====== cs ======"
--cmd mono ./bin/bin/TestAll-Debug.exe
+-cmd mono --debug ./bin/bin/TestAll-Debug.exe

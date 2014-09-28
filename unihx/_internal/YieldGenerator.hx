@@ -28,6 +28,7 @@ class YieldGenerator
 
 	var goto:TypedExpr;
 	var gotoEnd:TypedExpr;
+	var exc:TypedExpr;
 	var pos:Position;
 
 	var pack:String;
@@ -35,6 +36,10 @@ class YieldGenerator
 
 	var onBreak:TypedExpr;
 	var onContinue:TypedExpr;
+	var catchStack:Array<Array<{ t:Type, gotoHandler:TypedExpr }>>;
+	var bakedCatchStack:Array<{ t:Type, gotoHandler:TypedExpr }>;
+
+	var rethrow:Expr;
 
 	public function new(pack:String, e:Expr)
 	{
@@ -46,6 +51,7 @@ class YieldGenerator
 			default: throw "assert";
 		}
 
+		this.catchStack = [];
 		this.usedVars = new Map();
 		this.cfgs = [];
 		newFlow();
@@ -57,9 +63,20 @@ class YieldGenerator
 
 		this.goto = typeExpr( macro untyped __goto__ );
 		this.gotoEnd = typeExpr( macro untyped __goto_end__ );
+		this.exc = typeExpr( macro untyped __exc__ );
 		this.pos = currentPos();
 
 		this.pack = pack;
+		this.rethrow = if (defined('cs'))
+			macro cs.Lib.rethrow(exc);
+		else if (defined('neko'))
+			macro neko.Lib.rethrow(exc);
+		else if (defined('cpp'))
+			macro cpp.Lib.rethrow(exc);
+		else if (defined('php'))
+			macro php.Lib.rethrow(exc);
+		else
+			macro throw exc;
 	}
 
 	static function prepare(e:Expr):Expr
@@ -106,9 +123,35 @@ class YieldGenerator
 		}
 	}
 
+	private function bakeCatches()
+	{
+		var i = catchStack.length,
+				stack = catchStack;
+		var baked = this.bakedCatchStack = [];
+		while (i --> 0)
+		{
+			var cur = stack[i];
+			for (cur in cur)
+			{
+				var t = cur.t;
+				var add = true;
+				for (v in baked)
+				{
+					if (t.unify(v.t))
+					{
+						add = false;
+						break;
+					}
+				}
+				if (add)
+					baked.push(cur);
+			}
+		}
+	}
+
 	inline function newFlow()
 	{
-		var ret = { block:[], tryctx: current == null ? null : current.tryctx, id: ++id, next: null };
+		var ret = { block:[], tryctx:bakedCatchStack, id: ++id, next: null };
 		cfgs.push(ret);
 		current = ret;
 	}
@@ -128,7 +171,7 @@ class YieldGenerator
 		switch (e.expr)
 		{
 			case TCall( { expr:TLocal({ name:"__yield__" }) }, [e]):
-				throw new Error('A @yield cannot be used as an expression', e.pos);
+				throw new Error('@yield cannot be used here', e.pos);
 			case TLocal(v) | TVar(v,_):
 				setUsed(v.id);
 				e.iter(ensureNoYield);
@@ -154,6 +197,11 @@ class YieldGenerator
 		}
 		iter(e);
 		return has;
+	}
+
+	inline function mkGetExc(t:Type):TypedExpr
+	{
+		return { expr:TCast(exc, null), t:t, pos:pos };
 	}
 
 	function mkGoto(id:Int,final:Bool):TypedExpr
@@ -312,6 +360,60 @@ class YieldGenerator
 					for (c in currents)
 						c.next = current.id;
 				}
+			case TTry(etry, ecatches):
+				var cur = current,
+						curNext = cur.next,
+						curBlock = cur.block;
+				var currents = [];
+
+				if (hasYield(etry))
+				{
+					var handlers = [ for (c in ecatches) { t:c.v.t, gotoHandler: mkNothing() } ];
+					this.catchStack.push(handlers);
+					var old = this.bakedCatchStack;
+					bakeCatches();
+					newFlow(); //we need a new flow since we'll change the handlers mask
+
+					iter(etry);
+					currents.push(current);
+					this.catchStack.pop();
+					this.bakedCatchStack = old;
+					for (i in 0...ecatches.length)
+					{
+						var c = ecatches[i],
+								handler = handlers[i];
+						newFlow();
+						replace(handler.gotoHandler, mkGoto(current.id, true));
+						iter({ expr: TVar(c.v, mkGetExc(c.v.t)), t:tdynamic, pos:c.expr.pos });
+						iter(c.expr);
+						currents.push(current);
+					}
+				} else {
+					var tryblock = cur.block = [];
+					iter(etry);
+					var newc = [];
+					for (c in ecatches)
+					{
+						current = cur;
+						cur.next = id + 1;
+						var bl = cur.block = [];
+						var newVar = alloc_var(c.v.name, c.v.t);
+						iter({ expr: TVar(c.v, { expr: TLocal(newVar), t:newVar.t, pos:c.expr.pos }), t:tdynamic, pos:c.expr.pos });
+						iter(c.expr);
+						newc.push({ v: newVar, expr:mk_block(bl) });
+						currents.push(current);
+					}
+					cur.block = curBlock;
+					curBlock.push({ expr:TTry(mk_block(tryblock), newc), t: e.t, pos:e.pos });
+					cur.next = curNext;
+				}
+				if (cur != current)
+				{
+					newFlow();
+					for (c in currents)
+						c.next = current.id;
+				}
+
 			case TMeta(meta,e1):
 				iter(e1);
 
@@ -338,6 +440,7 @@ class YieldGenerator
 					ensureNoYield(e);
 					current.block.push(e);
 				}
+
 			case TCall( { expr:TLocal({ name:"__yield__" }) }, [ev]):
 				// return value
 				ensureNoYield(ev);
@@ -398,9 +501,14 @@ class YieldGenerator
 			acc = [];
 		}
 		var eswitch = { expr:ESwitch(macro this.eip, ecases, macro return false), pos:pos };
-		// trace(eswitch.toString());
 
-		eswitch = macro while(true) $eswitch;
+		eswitch = macro try { $eswitch; } catch(e:Dynamic) { if (!this.handleError(e)) {$rethrow; return false;} };
+		// see if C#
+		if (!false)
+		{
+			eswitch = macro while(true) $eswitch;
+		}
+		// trace(eswitch.toString());
 
 		var extChanged = [ for (ext in external) if (changed.exists(ext.id)) ext ];
 		//create new() function
@@ -429,6 +537,9 @@ class YieldGenerator
 				$eswitch;
 		};
 		cls.fields.push(nf);
+		var excHandler = getExcHandler();
+		if (excHandler != null)
+			cls.fields.push(excHandler);
 		var pvtAcc = macro : unihx._internal.PrivateTypeAccess;
 		for (changed in changed)
 		{
@@ -446,18 +557,86 @@ class YieldGenerator
 		return { expr:ENew({ pack:pack, name: name }, [ for (arg in extChanged) macro $i{arg.name} ]), pos:pos };
 	}
 
+	function getExcHandler()
+	{
+		var all = new Map();
+		var found = false;
+		for (i in 0...cfgs.length)
+		{
+			var cfg = cfgs[i];
+			if (cfg.tryctx != null)
+			{
+				found =true;
+				var g = all[cfg.tryctx];
+				if (g == null)
+				{
+					all[cfg.tryctx] = g = { ctx:cfg.tryctx, ids:[] };
+				}
+				g.ids.push(cfg.id);
+			}
+		}
+
+		if (!found)
+			return null;
+		var used = new Map(),
+				changed = new Map();
+		var cases = [];
+		for (ctx in all)
+		{
+			var ids = ctx.ids,
+					ctx = ctx.ctx;
+			var exprs = [];
+			for (c in ctx)
+			{
+				var module = switch(c.t) {
+					case TInst(c,_):
+						exprModule(TClassDecl(c),pos);
+					case TEnum(e,_):
+						exprModule(TEnumDecl(e),pos);
+					case TAbstract(a,_):
+						exprModule(ModuleType.TAbstract(a),pos);
+					case TType(t,_):
+						exprModule(TTypeDecl(t),pos);
+					case TDynamic(_):
+						macro Dynamic;
+					case _: throw 'assert: ' + c.t;
+				};
+				var gotoHandler = switch (c.gotoHandler.expr) {
+					case TCall({ expr:TLocal({ name: "__goto__" }) }, [{ expr:TConst(TInt(i)) }, _]):
+						macro { this.eip = $v{i}; return true; }
+					case _:
+						throw 'assert';
+				};
+				exprs.push(macro if(std.Std.is(exc,$module)) $gotoHandler);
+			}
+
+			cases.push({ values: [ for (v in ids) macro $v{v} ], expr: { expr:EBlock(exprs), pos:pos } });
+		}
+		var eswitch = { expr: ESwitch(macro this.eip, cases, null), pos:pos };
+		var field = (macro class {
+			override public function handleError(exc:Dynamic):Bool {
+				this.exc = exc;
+				$eswitch;
+				this.eip = -1;
+				this.exc = null;
+				return false;
+			}
+		}).fields[0];
+		return field;
+	}
+
 	function getExprFromCg(cfg:FlowGraph, used:Map<Int,Int>, changed:Map<Int,TVar>):Expr
 	{
 		var exprs = [ for (e in cfg.block) texprToExpr(e,used,changed) ];
 		if (exprs.length == 0)
 		{
-			exprs = [texprToExpr(mkGotoEnd(cfg.id,false),used,changed)];
+			exprs = [texprToExpr(mkGotoEnd(cfg.id,true),used,changed)];
 		} else switch (exprs[exprs.length-1]) {
 			case macro return $_:
 			case macro this.eip = $_:
 			case macro continue:
 			case _:
-				exprs.push(texprToExpr(mkGotoEnd(cfg.id, false),used,changed));
+				exprs.push(texprToExpr(mkGotoEnd(cfg.id, true),used,changed));
 		}
 		return { expr: EBlock(exprs), pos: pos };
 	}
@@ -497,11 +676,24 @@ class YieldGenerator
 		return { expr: TBlock(el), t: tdynamic, pos: el.length > 0 ? el[0].pos : pos };
 	}
 
+	function alloc_var(name:String, t:Type):TVar
+	{
+		switch (typeExpr(macro var _).expr) {
+			case TVar(v,_):
+				v.name = name;
+				v.t = t;
+				return v;
+			case _: throw 'assert';
+		}
+	}
+
 	private function texprToExpr(e:TypedExpr, used:Map<Int,Int>, changed:Map<Int,TVar>):Expr
 	{
 		function map(e:TypedExpr):Expr
 		{
 			return switch(e.expr) {
+				case TLocal({ name:"__exc__" }):
+					return macro this.exc;
 				case TLocal(v) if (used.get(v.id) > 1):
 					changed[v.id] = v;
 					var name = getVarName(v);
@@ -731,4 +923,4 @@ class YieldGenerator
 	}
 }
 
-typedef FlowGraph = { block:Array<TypedExpr>, tryctx:Null<Int>, next:Null<Int>, id:Int };
+typedef FlowGraph = { block:Array<TypedExpr>, tryctx:Array<{ t:Type, gotoHandler:TypedExpr }>, next:Null<Int>, id:Int };

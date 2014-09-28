@@ -17,7 +17,6 @@ class YieldTests
 	}
 
 #if !macro
-	/*
 	public function test_basic()
 	{
 		var t1 = test({
@@ -505,7 +504,6 @@ class YieldTests
 				// trace(v);
 		}
 	}
-	*/
 
 	public function test_pat_match()
 	{
@@ -618,11 +616,125 @@ class YieldTests
 		Assert.isFalse(t.hasNext());
 	}
 
+	public function test_try()
+	{
+		var throwobj:Dynamic = null,
+				i = 0;
+		function mayThrow()
+		{
+			if (throwobj != null)
+			{
+				var t = throwobj;
+				throwobj = null;
+				throw t;
+			}
+			return i++;
+		}
+
+		var t = test({
+			while(true)
+			{
+				var acc = 100;
+				try
+				{
+					acc+= 10;
+					@yield { v:0, retn:"A", acc:acc };
+					try
+					{
+						acc += 2;
+						if (mayThrow() == 0)
+						{
+							acc -= 4;
+							@yield { v:mayThrow(), retn:"B", acc:acc };
+							acc += 6;
+							@yield { v:mayThrow(), retn:"-", acc:acc };
+							acc -= 100;
+						} else {
+							acc += 300;
+							@yield { v:mayThrow(), retn:"AB", acc:acc };
+							@yield { v:mayThrow(), retn:"-", acc:acc };
+							acc -= 500;
+						}
+					}
+					catch(e:String)
+					{
+						@yield { v:mayThrow(), retn:"String " + e, acc:++acc };
+						acc = 5;
+						@yield { v:mayThrow(), retn:"String", acc:++acc };
+						acc += 4;
+						try
+						{
+							@yield { v:mayThrow(), retn:"String", acc:++acc };
+							acc += 15;
+							@yield { v:mayThrow(), retn:"StringT2", acc:acc };
+							acc += 5;
+							@yield { v:mayThrow(), retn:"-", acc:acc };
+						}
+						catch(e:Dynamic)
+						{
+							@yield true;
+							try
+							{
+								@yield { v:mayThrow(), retn:"StringT3", acc:acc };
+								acc += 20;
+								@yield { v:mayThrow(), retn:"-", acc:acc };
+							}
+							catch(str:String)
+							{
+								@yield { v:mayThrow(), retn:"-", acc:acc };
+							}
+						}
+					}
+					catch(e:haxe.io.Eof)
+					{
+						@yield { v:mayThrow(), retn:"-", acc:acc };
+					}
+				}
+				catch(e:haxe.io.Eof)
+				{
+					@yield { v:mayThrow(), retn:"eof", acc:acc };
+				}
+			}
+		});
+
+		inline function getValue() return t.hasNext() ? t.next() : null;
+		Assert.same({ v:0, retn:"A", acc:110 }, getValue());
+		Assert.same({ v:1, retn:"B", acc:108 }, getValue());
+		//114
+		throwobj = "SomeString";
+		Assert.same({ v:2, retn:"String SomeString", acc:115 }, getValue());
+		Assert.same({ v:3, retn:"String", acc:6 }, getValue());
+		Assert.same({ v:4, retn:"String", acc:11 }, getValue());
+		Assert.same({ v:5, retn:"StringT2", acc:26 }, getValue());
+		//31
+		throwobj = new haxe.io.Eof();
+		Assert.equals(true,getValue());
+		Assert.same({ v:6, retn:"StringT3", acc:31 }, getValue());
+		throwobj = new haxe.io.Eof();
+		Assert.same({ v:7, retn:"eof", acc:51 }, getValue());
+
+		Assert.same({ v:0, retn:"A", acc:110 }, getValue());
+		Assert.same({ v:9, retn:"AB", acc:412 }, getValue());
+		throwobj = "OtherString";
+		Assert.same({ v:10, retn:"String OtherString", acc:413 }, getValue());
+		throwobj = "AnotherString";
+		var hadExc = false;
+		try {
+			getValue();
+		} catch(e:String) {
+			hadExc = true;
+			Assert.equals("AnotherString",e);
+		}
+		Assert.isTrue(hadExc);
+		Assert.isFalse(t.hasNext());
+	}
+
 	//TODO test private access
 	//TODO test type parameter
 	//TODO test inline for
 	//TODO test that captured vars is kept to a minimum (checking Reflect.fields)
-	//
-
+	//TODO test 'this'
+	//TODO test conflicting vars
+	//TODO test v_captured fail
 #end
 }

@@ -5,6 +5,7 @@ class TestAll
 {
 	static function main()
 	{
+		// var ret = sys.io.File.write('test.txt');
 		haxe.Log.trace = function(v:Dynamic, ?infos:haxe.PosInfos) {
 			var str:String = null;
 			if (infos != null) {
@@ -16,6 +17,8 @@ class TestAll
 			} else {
 				str = v;
 			}
+			// ret.writeString(str);
+			// ret.writeString('\n');
 			cs.system.Console.WriteLine(str);
 		};
 		var runner = new Runner();
@@ -24,5 +27,7 @@ class TestAll
 
 		var report = new utest.ui.text.PrintReport(runner);
 		runner.run();
+
+		// ret.close();
 	}
 }
