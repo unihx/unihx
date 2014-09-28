@@ -15,6 +15,8 @@ before_install: # clone travis-hx repo
 
 install: # setup the target
   - ~/travis-hx/setup.sh
+  - haxelib install utest
+  - haxelib dev unihx "$TRAVIS_BUILD_DIR"
   - cd ~
   - curl -L "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoQmpOYW44S2c3SU0" -o mac.tar.gz
   - tar -zxf mac.tar.gz
