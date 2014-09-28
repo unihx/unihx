@@ -7,7 +7,7 @@ environment:
 install: # clone travis-hx repo and setup the target
   - echo starting
   - git clone --depth=50 --branch=master git://github.com/waneck/travis-hx.git C:\travis-hx
-  - C:\travis-hx\AppVeyor.exe setup
+  - C:\travis-hx\extra\appveyor\AppVeyor.exe setup
   - haxelib install utest
   - haxelib dev unihx C:\projects\unihx
   - cinst wget -x86
