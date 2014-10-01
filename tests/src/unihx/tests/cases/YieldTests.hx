@@ -1,11 +1,13 @@
-package tests;
-import utest.Assert;
+package unihx.tests.cases;
+import unihx.tests.*;
 import unihx._internal.YieldBase;
 
 using Lambda;
 
 class YieldTests
 {
+	public var assert(default,null):Assert = new Assert();
+
 	public function new()
 	{
 		this.someTest = "someTest";
@@ -15,7 +17,7 @@ class YieldTests
 
 	macro private static function test(expr:haxe.macro.Expr):haxe.macro.Expr.ExprOf<unihx._internal.YieldBase>
 	{
-		var ret = unihx._internal.YieldGenerator.make('tests.unihx',expr);
+		var ret = unihx._internal.YieldGenerator.make('unihx.tests',expr);
 		return macro ($ret : unihx._internal.YieldBase);
 	}
 
@@ -55,17 +57,17 @@ class YieldTests
 			@yield {retn:"c",arr:a};
 			a.push(4);
 		});
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"A",arr:[1]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"B",arr:[1,1.1,1.2]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"b",arr:[2]}, t1.next());
-		Assert.isTrue(t1.hasNext());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"A",arr:[1]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"B",arr:[1,1.1,1.2]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"b",arr:[2]}, t1.next());
+		assert.isTrue(t1.hasNext());
 		var last = t1.next();
-		Assert.same({retn:"c",arr:[2,3]}, last);
-		Assert.isFalse(t1.hasNext());
-		Assert.same([2,3,4],last.arr);
+		assert.same({retn:"c",arr:[2,3]}, last);
+		assert.isFalse(t1.hasNext());
+		assert.same([2,3,4],last.arr);
 	}
 
 	public function test_if()
@@ -100,18 +102,18 @@ class YieldTests
 			a.push(4);
 		});
 
-		Assert.isTrue(t1.hasNext());
+		assert.isTrue(t1.hasNext());
 		f = true; //it shouldn't change the behavior here - as vars aren't captured, they are copied
-		Assert.same({retn:"A",arr:[1]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"B",arr:[1,1.1,1.2]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"b",arr:[2]}, t1.next());
-		Assert.isTrue(t1.hasNext());
+		assert.same({retn:"A",arr:[1]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"B",arr:[1,1.1,1.2]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"b",arr:[2]}, t1.next());
+		assert.isTrue(t1.hasNext());
 		var last = t1.next();
-		Assert.same({retn:"c",arr:[2,3]}, last);
-		Assert.isFalse(t1.hasNext());
-		Assert.same([2,3,4],last.arr);
+		assert.same({retn:"c",arr:[2,3]}, last);
+		assert.isFalse(t1.hasNext());
+		assert.same([2,3,4],last.arr);
 
 		//check for deep nesting
 		var t = true, f = false;
@@ -201,23 +203,23 @@ class YieldTests
 			a.push(4);
 		});
 
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"A",arr:[1]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"A1",arr:[1,1.1,1.11]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"B",arr:[1,1.1,1.11,1.12,1.2]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"B1",arr:[1.4]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"B2",arr:[1.4,1.5]}, t1.next());
-		Assert.isTrue(t1.hasNext());
-		Assert.same({retn:"b",arr:[2]}, t1.next());
-		Assert.isTrue(t1.hasNext());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"A",arr:[1]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"A1",arr:[1,1.1,1.11]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"B",arr:[1,1.1,1.11,1.12,1.2]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"B1",arr:[1.4]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"B2",arr:[1.4,1.5]}, t1.next());
+		assert.isTrue(t1.hasNext());
+		assert.same({retn:"b",arr:[2]}, t1.next());
+		assert.isTrue(t1.hasNext());
 		var last = t1.next();
-		Assert.same({retn:"c",arr:[2,3]}, last);
-		Assert.isFalse(t1.hasNext());
-		Assert.same([2,3,4],last.arr);
+		assert.same({retn:"c",arr:[2,3]}, last);
+		assert.isFalse(t1.hasNext());
+		assert.same([2,3,4],last.arr);
 	}
 
 	public function test_fibonacci()
@@ -234,7 +236,7 @@ class YieldTests
 			}
 		});
 
-		Assert.same([0,1, 1, 2, 3, 5, 8, 13, 21, 34], [for(v in fib) v]);
+		assert.same([0,1, 1, 2, 3, 5, 8, 13, 21, 34], [for(v in fib) v]);
 
 		//infinite version
 		var fib = test({
@@ -250,10 +252,10 @@ class YieldTests
 
 		for (i in [0,1, 1, 2, 3, 5, 8, 13, 21, 34])
 		{
-			Assert.isTrue(fib.hasNext());
-			Assert.equals(i,fib.next());
+			assert.isTrue(fib.hasNext());
+			assert.equals(i,fib.next());
 		}
-		Assert.isTrue(fib.hasNext());
+		assert.isTrue(fib.hasNext());
 	}
 
 	public function test_fact()
@@ -268,7 +270,7 @@ class YieldTests
 			}
 		});
 
-		Assert.same([1,1,2,6,24,120,720,5040,40320,362880], [for(v in fact) v]);
+		assert.same([1,1,2,6,24,120,720,5040,40320,362880], [for(v in fact) v]);
 
 		//infinite version
 		var fact = test({
@@ -282,10 +284,10 @@ class YieldTests
 
 		for (i in [1,1,2,6,24,120,720,5040,40320,362880])
 		{
-			Assert.isTrue(fact.hasNext());
-			Assert.equals(i,fact.next());
+			assert.isTrue(fact.hasNext());
+			assert.equals(i,fact.next());
 		}
-		Assert.isTrue(fact.hasNext());
+		assert.isTrue(fact.hasNext());
 	}
 
 	public function test_array_for()
@@ -301,8 +303,8 @@ class YieldTests
 		});
 		for (i in [0, 3, 5, 7, 9, 11, 13])
 		{
-			Assert.isTrue(t.hasNext());
-			Assert.equals(i, t.next());
+			assert.isTrue(t.hasNext());
+			assert.equals(i, t.next());
 		}
 
 		//calling iterator() directly
@@ -317,8 +319,8 @@ class YieldTests
 		});
 		for (i in [0, 3, 5, 7, 9, 11, 13])
 		{
-			Assert.isTrue(t.hasNext());
-			Assert.equals(i, t.next());
+			assert.isTrue(t.hasNext());
+			assert.equals(i, t.next());
 		}
 	}
 
@@ -335,8 +337,8 @@ class YieldTests
 		});
 		for (i in [0, 3, 5, 7, 9, 11, 13])
 		{
-			Assert.isTrue(t.hasNext());
-			Assert.equals(i, t.next());
+			assert.isTrue(t.hasNext());
+			assert.equals(i, t.next());
 		}
 		var t = test({
 			var arr = [1,2,3,4,5,6,7].list(), lastValue = -1;
@@ -349,8 +351,8 @@ class YieldTests
 		});
 		for (i in [0, 3, 5, 7, 9, 11, 13])
 		{
-			Assert.isTrue(t.hasNext());
-			Assert.equals(i, t.next());
+			assert.isTrue(t.hasNext());
+			assert.equals(i, t.next());
 		}
 
 	}
@@ -482,38 +484,38 @@ class YieldTests
 			{
 				a.push(i / 10);
 				a.push(2);
-				Assert.same({ retn:1, arr: a }, getValue());
+				assert.same({ retn:1, arr: a }, getValue());
 				if (rand) a.push(2.05);
 				a.push(2.10);
-				Assert.same({ retn:2, arr: a }, getValue());
+				assert.same({ retn:2, arr: a }, getValue());
 				if (rand) a.push(2.15);
 				a.push(2.2);
-				Assert.same({ retn:3, arr : a}, getValue());
+				assert.same({ retn:3, arr : a}, getValue());
 				a.push(2.3);
-				Assert.same({ retn:4, arr : a}, getValue());
+				assert.same({ retn:4, arr : a}, getValue());
 				if (rand) a.push(2.35);
 				a.push(2.4);
-				Assert.same({ retn:5, arr : a}, getValue());
+				assert.same({ retn:5, arr : a}, getValue());
 				if (rand) a.push(2.45);
 				a.push(2.5);
-				Assert.same({ retn:6, arr : a}, getValue());
+				assert.same({ retn:6, arr : a}, getValue());
 				a.push(2.6);
 				a = [3];
-				Assert.same({ retn:7, arr : a}, getValue());
+				assert.same({ retn:7, arr : a}, getValue());
 				a.push(3.1);
-				Assert.same({ retn:8, arr : a}, getValue());
+				assert.same({ retn:8, arr : a}, getValue());
 				a.push(3.2);
-				Assert.same({ retn:9, arr : a}, getValue());
+				assert.same({ retn:9, arr : a}, getValue());
 				a = [4];
-				Assert.same({ retn:10, arr : a}, getValue());
+				assert.same({ retn:10, arr : a}, getValue());
 				for (i in 0...4)
 				{
 					a.push(4 + i / 10);
 					if (rand) a.push(4 + i / 10 + .05);
-					Assert.same({ retn:11 + i, arr : a}, getValue());
+					assert.same({ retn:11 + i, arr : a}, getValue());
 				}
 				a.push(5);
-				// Assert.same({ retn: 12, arr : a}, getValue());
+				// same({ retn: 12, arr : a}, getValue());
 			}
 			// for (v in t)
 				// trace(v);
@@ -545,10 +547,10 @@ class YieldTests
 		});
 		inline function getValue() return t.hasNext() ? t.next() : null;
 
-		Assert.same({ op:"OpSub", acc:10, v:1 }, getValue());
-		Assert.same({ op:"OpAdd", acc:70, v:1 }, getValue());
-		Assert.same({ op:"OpAdd", acc:100, v:2 }, getValue());
-		Assert.isFalse(t.hasNext());
+		assert.same({ op:"OpSub", acc:10, v:1 }, getValue());
+		assert.same({ op:"OpAdd", acc:70, v:1 }, getValue());
+		assert.same({ op:"OpAdd", acc:100, v:2 }, getValue());
+		assert.isFalse(t.hasNext());
 
 		expr = macro @:someMeta 50 + 5 - 10 + 20 + 60 - 10;
 		t = test({
@@ -617,18 +619,18 @@ class YieldTests
 		});
 		inline function getValue() return t.hasNext() ? t.next() : null;
 
-		Assert.same({ op:"OpSub", acc:10, v:1 }, getValue());
-		Assert.same({ op:"OpAdd", acc:70, v:1 }, getValue());
-		Assert.same({ op:"OpAdd", acc:90, v:1 }, getValue());
-		Assert.same({ op:"OpSub", acc:100, v:1 }, getValue());
-		Assert.same({ op:"no const", acc:105, v:0 }, getValue());
-		Assert.same({ acc:105, v:3 }, getValue());
-		Assert.same({ acc:155, v:4 }, getValue());
-		Assert.same({ op:"finished", acc:160, v:5 }, getValue());
-		Assert.same({ acc:160, v:6 }, getValue());
-		Assert.same({ acc:165, v:7 }, getValue());
-		Assert.same({ op:"OpAdd", acc:5, v:8 }, getValue());
-		Assert.isFalse(t.hasNext());
+		assert.same({ op:"OpSub", acc:10, v:1 }, getValue());
+		assert.same({ op:"OpAdd", acc:70, v:1 }, getValue());
+		assert.same({ op:"OpAdd", acc:90, v:1 }, getValue());
+		assert.same({ op:"OpSub", acc:100, v:1 }, getValue());
+		assert.same({ op:"no const", acc:105, v:0 }, getValue());
+		assert.same({ acc:105, v:3 }, getValue());
+		assert.same({ acc:155, v:4 }, getValue());
+		assert.same({ op:"finished", acc:160, v:5 }, getValue());
+		assert.same({ acc:160, v:6 }, getValue());
+		assert.same({ acc:165, v:7 }, getValue());
+		assert.same({ op:"OpAdd", acc:5, v:8 }, getValue());
+		assert.isFalse(t.hasNext());
 	}
 
 	public function test_try()
@@ -713,35 +715,36 @@ class YieldTests
 		});
 
 		inline function getValue() return t.hasNext() ? t.next() : null;
-		Assert.same({ v:0, retn:"A", acc:110 }, getValue());
-		Assert.same({ v:1, retn:"B", acc:108 }, getValue());
+		assert.same({ v:0, retn:"A", acc:110 }, getValue());
+		assert.same({ v:1, retn:"B", acc:108 }, getValue());
 
 		throwobj = "SomeString";
-		Assert.same({ v:2, retn:"String SomeString", acc:115 }, getValue());
-		Assert.same({ v:3, retn:"String", acc:6 }, getValue());
-		Assert.same({ v:4, retn:"String", acc:11 }, getValue());
-		Assert.same({ v:5, retn:"StringT2", acc:26 }, getValue());
+		assert.same({ v:2, retn:"String SomeString", acc:115 }, getValue());
+		assert.same({ v:3, retn:"String", acc:6 }, getValue());
+		assert.same({ v:4, retn:"String", acc:11 }, getValue());
+		assert.same({ v:5, retn:"StringT2", acc:26 }, getValue());
 
 		throwobj = new haxe.io.Eof();
-		Assert.equals(true,getValue());
-		Assert.same({ v:6, retn:"StringT3", acc:31 }, getValue());
+		assert.equals(true,getValue());
+		assert.same({ v:6, retn:"StringT3", acc:31 }, getValue());
 		throwobj = new haxe.io.Eof();
-		Assert.same({ v:7, retn:"eof", acc:51 }, getValue());
+		assert.same({ v:7, retn:"eof", acc:51 }, getValue());
 
-		Assert.same({ v:0, retn:"A", acc:110 }, getValue());
-		Assert.same({ v:9, retn:"AB", acc:412 }, getValue());
+		assert.same({ v:0, retn:"A", acc:110 }, getValue());
+		assert.same({ v:9, retn:"AB", acc:412 }, getValue());
 		throwobj = "OtherString";
-		Assert.same({ v:10, retn:"String OtherString", acc:413 }, getValue());
+		assert.same({ v:10, retn:"String OtherString", acc:413 }, getValue());
 		throwobj = "AnotherString";
 		var hadExc = false;
 		try {
 			getValue();
+			assert.fail();
 		} catch(e:String) {
 			hadExc = true;
-			Assert.equals("AnotherString",e);
+			assert.equals("AnotherString",e);
 		}
-		Assert.isTrue(hadExc);
-		Assert.isFalse(t.hasNext());
+		assert.isTrue(hadExc);
+		assert.isFalse(t.hasNext());
 	}
 
 	//test private access
@@ -752,7 +755,7 @@ class YieldTests
 			//this value get
 			var theValue = someTest;
 			@yield { v:1, val:theValue };
-			Assert.equals('someTest', theValue);
+			assert.equals('someTest', theValue);
 			//this function call
 			@yield { v:2, val:pvtFunc() };
 			@yield { v:3, val:theValue != someTest };
@@ -760,11 +763,11 @@ class YieldTests
 		});
 
 		inline function getValue() return t.hasNext() ? t.next() : null;
-		Assert.same({ v:1, val:'someTest'}, getValue());
-		Assert.same({ v:2, val:true}, getValue());
-		Assert.same({ v:3, val:true}, getValue());
-		Assert.same({ v:4, val:'didCall'}, getValue());
-		Assert.isFalse(t.hasNext());
+		assert.same({ v:1, val:'someTest'}, getValue());
+		assert.same({ v:2, val:true}, getValue());
+		assert.same({ v:3, val:true}, getValue());
+		assert.same({ v:4, val:'didCall'}, getValue());
+		assert.isFalse(t.hasNext());
 	}
 
 	private function pvtFunc()
@@ -788,16 +791,16 @@ class YieldTests
 	{
 		inline function getVal(t:Iterator<Dynamic>) return t.hasNext() ? t.next() : null;
 		var t1 = localTypeParam(10,20);
-		Assert.equals(10,getVal(t1));
-		Assert.equals(20,getVal(t1));
-		Assert.equals(false,getVal(t1));
-		Assert.isFalse(t1.hasNext());
+		assert.equals(10,getVal(t1));
+		assert.equals(20,getVal(t1));
+		assert.equals(false,getVal(t1));
+		assert.isFalse(t1.hasNext());
 
 		t1 = localTypeParam('a','a');
-		Assert.equals('a',getVal(t1));
-		Assert.equals('a',getVal(t1));
-		Assert.equals(true,getVal(t1));
-		Assert.isFalse(t1.hasNext());
+		assert.equals('a',getVal(t1));
+		assert.equals('a',getVal(t1));
+		assert.equals(true,getVal(t1));
+		assert.isFalse(t1.hasNext());
 
 		function fnTypeParam<X>(a:Array<X>)
 		{
@@ -812,15 +815,15 @@ class YieldTests
 			});
 		}
 		t1 = fnTypeParam([1,2,1,1]);
-		Assert.equals(1,getVal(t1));
-		Assert.equals(false,getVal(t1));
-		Assert.equals(2,getVal(t1));
-		Assert.equals(false,getVal(t1));
-		Assert.equals(1,getVal(t1));
-		Assert.equals(false,getVal(t1));
-		Assert.equals(1,getVal(t1));
-		Assert.equals(true,getVal(t1));
-		Assert.isFalse(t1.hasNext());
+		assert.equals(1,getVal(t1));
+		assert.equals(false,getVal(t1));
+		assert.equals(2,getVal(t1));
+		assert.equals(false,getVal(t1));
+		assert.equals(1,getVal(t1));
+		assert.equals(false,getVal(t1));
+		assert.equals(1,getVal(t1));
+		assert.equals(true,getVal(t1));
+		assert.isFalse(t1.hasNext());
 	}
 
 	//better naming for defined classes
@@ -832,7 +835,7 @@ class YieldTests
 			@yield 3;
 		});
 
-		Assert.isTrue(Type.getClassName(Type.getClass(x)).indexOf('test_naming') >= 0);
+		assert.isTrue(Type.getClassName(Type.getClass(x)).indexOf('test_naming') >= 0);
 	}
 
 	//TODO test v_captured fail - v_captured is only added later; see how to implement
@@ -847,7 +850,7 @@ class YieldTests
 	// 			@yield x;
 	// 		}));
 	// 	}
-	// 	Assert.isTrue(testC());
+	// 	isTrue(testC());
 	// }
 #end
 }

@@ -1,5 +1,5 @@
-import utest.Runner;
-import utest.ui.Report;
+import unihx.tests.*;
+import unihx.tests.cases.*;
 
 class CmdTests
 {
@@ -21,12 +21,12 @@ class CmdTests
 			// ret.writeString('\n');
 			cs.system.Console.WriteLine(str);
 		};
-		var runner = new Runner();
 
-		runner.addCase(new tests.YieldTests());
-
-		var report = new utest.ui.text.PrintReport(runner);
-		runner.run();
+		var tests:Array<{ var assert(default,null):Assert; }> = [ new YieldTests() ];
+		for (t in tests)
+		{
+			trace(t.assert.getResults().toString());
+		}
 
 		// ret.close();
 	}

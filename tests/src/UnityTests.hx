@@ -1,5 +1,6 @@
 import utest.Runner;
 import utest.ui.Report;
+import unihx.tests.*;
 
 class UnityTests
 {
