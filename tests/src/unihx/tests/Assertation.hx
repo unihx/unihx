@@ -9,5 +9,5 @@ enum Assertation {
 	Error(e : Dynamic, stack : Array<StackItem>);
 	TimeoutFailure(pos:PosInfos);
 	AsyncError(e : Dynamic, stack : Array<StackItem>);
-	Warning(msg : String);
+	Warning(msg : String, pos : PosInfos);
 }
