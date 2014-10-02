@@ -11,8 +11,6 @@ class UnityTests extends MonoBehaviour
 		runner.addCase( new YieldTests() );
 		runner.run();
 
-		runner.showTests();
-
 		(new GameObject('Tests').AddComponent() : UnityTests);
 	}
 
