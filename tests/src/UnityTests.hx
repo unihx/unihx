@@ -13,11 +13,6 @@ class UnityTests extends MonoBehaviour
 
 		runner.showTests();
 
-		if (runner.hasErrors())
-			Sys.exit(1);
-		else
-			Sys.exit(0);
-
 		(new GameObject('Tests').AddComponent() : UnityTests);
 	}
 
