@@ -4,10 +4,18 @@ import haxe.PosInfos;
 import haxe.CallStack;
 
 enum Assertation {
+	BeginField(f:String);
+	ErrorField(f:String, message:String);
+	BeginAsync(name:String, pos:PosInfos);
+	EndFields;
+
 	Success(pos : PosInfos);
 	Failure(msg : String, pos : PosInfos);
-	Error(e : Dynamic, stack : Array<StackItem>);
-	TimeoutFailure(pos:PosInfos);
-	AsyncError(e : Dynamic, stack : Array<StackItem>);
 	Warning(msg : String, pos : PosInfos);
+
+	Error(e : Dynamic, stack : Array<StackItem>);
+	SetupError(e : Dynamic, stack : Array<StackItem>);
+	TeardownError(e : Dynamic, stack : Array<StackItem>);
+
+	TimeoutFailure(msg : String, pos:PosInfos);
 }

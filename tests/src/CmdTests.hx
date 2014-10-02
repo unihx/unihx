@@ -5,29 +5,15 @@ class CmdTests
 {
 	static function main()
 	{
-		// var ret = sys.io.File.write('test.txt');
-		haxe.Log.trace = function(v:Dynamic, ?infos:haxe.PosInfos) {
-			var str:String = null;
-			if (infos != null) {
-				str = infos.fileName + ":" + infos.lineNumber + ": " + v;
-				if (infos.customParams != null)
-				{
-					str += "," + infos.customParams.join(",");
-				}
-			} else {
-				str = v;
-			}
-			// ret.writeString(str);
-			// ret.writeString('\n');
-			cs.system.Console.WriteLine(str);
-		};
+		var runner = new Runner();
+		runner.addCase( new YieldTests() );
+		runner.run();
 
-		var tests:Array<{ var assert(default,null):Assert; }> = [ new YieldTests() ];
-		for (t in tests)
-		{
-			trace(t.assert.getResults().toString());
-		}
+		runner.showTests();
 
-		// ret.close();
+		if (runner.hasErrors())
+			Sys.exit(1);
+		else
+			Sys.exit(0);
 	}
 }
