@@ -31,7 +31,6 @@ script:
   - cp bin/bin/bin-Debug.dll ~/test.app/Contents/Data/Managed
   - cd ~
   - ./test.app/Contents/MacOS/test
-  - ls -al *
   - cat testResult.txt
-    # will fail if .noErrors file is not created
   - cat .noErrors
+    # will fail if .noErrors file is not created
