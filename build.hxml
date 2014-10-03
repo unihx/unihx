@@ -1,0 +1,6 @@
+-net-lib lib/UnityEngine.dll
+-net-lib lib/UnityEditor.dll
+-cs tests/bin
+-cp tests/src
+-cp .
+-main CmdTests
