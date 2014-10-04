@@ -1,4 +1,4 @@
--cpp bin/ios
+-cpp bin
 -D static_link
 -cp src
 -main Main
