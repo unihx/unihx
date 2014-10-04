@@ -1,6 +1,9 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <stdio.h>
 
+const char *hxRunLibrary();
+void hxcpp_set_top_of_stack();
+   
 #ifndef SPRINGBOARDSERVICES_H_
 extern int SBSLaunchApplicationWithIdentifier(CFStringRef identifier, Boolean suspended);
 extern CFStringRef SBSApplicationLaunchingErrorString(int error);
@@ -8,7 +11,14 @@ extern CFStringRef SBSApplicationLaunchingErrorString(int error);
 
 int main(int argc, char **argv, char **envp)
 {
-    int ret;
+		int ret = 0;
+		const char *err = NULL;
+		hxcpp_set_top_of_stack();
+
+		err = hxRunLibrary();
+		if (err) {
+				printf(" Error %s\n", err );
+		}
 
     if (argc < 2) {
         fprintf(stderr, "Usage: %s com.application.identifier \n", argv[0]);

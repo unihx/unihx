@@ -12,6 +12,8 @@ AR:=arm-apple-darwin11-ar
 
 LDID:=ldid
 
+HXCPP_PATH=$(shell haxelib path hxcpp | head -1)
+
 CFLAGS += -I/usr/include/clang/3.2/include
 CFLAGS += -F$(PVT_FRAMEWORKS)
 CFLAGS += -objc-arc
@@ -25,8 +27,8 @@ CXXFLAGS += -g0 -O2
 
 LDFLAGS += -framework Foundation
 LDFLAGS += -framework SpringBoardServices
-LDFLAGS += -Lbin
-LDFLAGS += -lmain
+LDFLAGS += "-L${HXCPP_PATH}/bin/IPhone" -Lbin
+LDFLAGS += -lmain -lpthread -ldl -lstd.iphoneos-v7 -lregexp.iphoneos-v7 -lzlib.iphoneos-v7 -lstdc++
 
 SRCDIR=native
 OBJS+=$(patsubst %.m,%.o,$(wildcard $(SRCDIR)/*.m))
