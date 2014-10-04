@@ -1,13 +1,14 @@
+#import <UIKit/UIKit.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <stdio.h>
 
 const char *hxRunLibrary();
 void hxcpp_set_top_of_stack();
    
-#ifndef SPRINGBOARDSERVICES_H_
-extern int SBSLaunchApplicationWithIdentifier(CFStringRef identifier, Boolean suspended);
-extern CFStringRef SBSApplicationLaunchingErrorString(int error);
-#endif
+/* #ifndef SPRINGBOARDSERVICES_H_ */
+/* extern int SBSLaunchApplicationWithIdentifier(CFStringRef identifier, Boolean suspended); */
+/* extern CFStringRef SBSApplicationLaunchingErrorString(int error); */
+/* #endif */
 
 int main(int argc, char **argv, char **envp)
 {
@@ -25,17 +26,19 @@ int main(int argc, char **argv, char **envp)
         return -1;
     }
 
-    CFStringRef identifier = CFStringCreateWithCString(kCFAllocatorDefault, argv[1], kCFStringEncodingUTF8);
-    assert(identifier != NULL);
+		/* [UIApplication launchApplicationWithIdentifier:[NSString stringWithUTF8String:argv[1]] suspended:NO]; */
 
-    ret = SBSLaunchApplicationWithIdentifier(identifier, FALSE);
+    /* CFStringRef identifier = CFStringCreateWithCString(kCFAllocatorDefault, argv[1], kCFStringEncodingUTF8); */
+    /* assert(identifier != NULL); */
 
-    if (ret != 0) {
-        fprintf(stderr, "Couldn't open application: %s. Reason: %i, ", argv[1], ret);
-        CFShow(SBSApplicationLaunchingErrorString(ret));
-    }
+    /* ret = SBSLaunchApplicationWithIdentifier(identifier, FALSE); */
 
-    CFRelease(identifier);
+    /* if (ret != 0) { */
+    /*     fprintf(stderr, "Couldn't open application: %s. Reason: %i, ", argv[1], ret); */
+    /*     CFShow(SBSApplicationLaunchingErrorString(ret)); */
+    /* } */
+
+    /* CFRelease(identifier); */
 
     return ret;
 }

@@ -26,6 +26,7 @@ CXXFLAGS += -fblocks
 CXXFLAGS += -g0 -O2
 
 LDFLAGS += -framework Foundation
+LDFLAGS += -framework UIKit
 LDFLAGS += -framework SpringBoardServices
 LDFLAGS += "-L${HXCPP_PATH}/bin/IPhone" -Lbin
 LDFLAGS += -lmain -lpthread -ldl -lstd.iphoneos-v7 -lregexp.iphoneos-v7 -lzlib.iphoneos-v7 -lstdc++
@@ -57,6 +58,7 @@ $(PROJECTNAME):	$(OBJS) bin/libmain.a
 
 clean:
 	find . -name \*.o|xargs rm -rf
+	rm -rf bin
 	rm -f $(PROJECTNAME)
 
 .PHONY: all clean
