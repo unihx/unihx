@@ -1,0 +1,4 @@
+-cpp bin/ios
+-D static_link
+-cp src
+-main Main
