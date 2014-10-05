@@ -1,12 +1,13 @@
 {
 	"setup":[
 		"rm -rf /Applications/ProductName.app",
-		"tar -zxf $TARGET_FILENAME -O /Applications",
-		"uicache",
-		"rm /tmp/unity_test_result.txt",
-		"rm /tmp/.unity_no_errors"
+		"tar -zxf $TARGET_FILENAME",
+		"mv ProductName.app /Applications",
+		"su mobile -c uicache",
+		"rm -f /tmp/unity_test_result.txt",
+		"rm -f /tmp/.unity_no_errors"
 	],
-	"mainAppGui":{ "appId":"com.Company.ProductName", "listenFileEnd": "/tmp/.unity_no_errors" },
+	"mainAppGui":{ "appId":"com.Company.ProductName", "listenFileEnd": "/tmp/unity_test_result.txt" },
 	"cleanup":[
 		"cat /tmp/unity_test_result.txt",
 		"cat /tmp/.unity_no_errors",

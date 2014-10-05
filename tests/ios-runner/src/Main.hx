@@ -24,7 +24,7 @@ class Main
 		while (true)
 		{
 			var s2 = sock.accept();
-			var filename = DateTools.format(Date.now(), '%Y%m%d %H%M%S-${i++}');
+			var filename = DateTools.format(Date.now(), '%Y%m%d_%H%M%S-${i++}');
 			var path = '/tmp/' + filename;
 			var file = sys.io.File.write('$logDir/$filename.log');
 			try
@@ -42,16 +42,22 @@ class Main
 				file.writeString(Std.string(data) );
 				file.writeString('\n\n');
 
-				var setup = data.setup == null ? [] : [ for (s in data.setup) run('/bin/sh',[s]) ];
+				trace('setuo');
+				var setup = data.setup == null ? [] : [ for (s in data.setup) run('/bin/sh',['-c',s]) ];
+				trace('main gui');
 				var mainAppGui = (data.mainAppGui == null) ? null : launchGui( data.mainAppGui.appId, expand(data.mainAppGui.listenFileEnd) );
-				var mainAppShell = data.mainAppShell == null ? null : [ for (s in data.mainAppShell) run('/bin/sh',[s]) ];
-				var cleanup = data.cleanup == null ? null : [ for (s in data.cleanup) run('/bin/sh',[s]) ];
+				trace('main shell');
+				var mainAppShell = data.mainAppShell == null ? [] : [ for (s in data.mainAppShell) run('/bin/sh',['-c',s]) ];
+				trace('cleanup');
+				var cleanup = data.cleanup == null ? [] : [ for (s in data.cleanup) run('/bin/sh',['-c',s]) ];
 
+				trace('send file');
 				var sendFile = data.sendFile == null ? null : expand( data.sendFile );
 
-				var ret = { setup:setup, mainAppGui:mainAppGui, mainAppShell:mainAppShell, cleanup:cleanup };
-				file.writeString(Std.string(ret) );
+				var meta = { setup:setup, mainAppGui:mainAppGui, mainAppShell:mainAppShell, cleanup:cleanup };
+				file.writeString(Std.string(meta) );
 				file.writeString('\n\n');
+				proto.toClient(s2.output, meta, sendFile);
 			}
 			catch(e:Dynamic)
 			{
