@@ -16,12 +16,12 @@ HXCPP_PATH=$(shell haxelib path hxcpp | head -1)
 
 CFLAGS += -I/usr/include/clang/3.2/include
 CFLAGS += -F$(PVT_FRAMEWORKS)
-CFLAGS += -objc-arc
+# CFLAGS += -objc-arc
 CFLAGS += -fblocks
 CFLAGS += -g0 -O2
 
 CXXFLAGS += -I/usr/include/clang/3.2/include
-CXXFLAGS += -objc-arc
+# CXXFLAGS += -objc-arc
 CXXFLAGS += -fblocks
 CXXFLAGS += -g0 -O2
 
