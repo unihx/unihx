@@ -41,34 +41,67 @@ class Protocol
 	{
 		if (i.readString("IOSTEST".length) != "IOSTEST")
 			throw "Invalid greeting";
-		trace('greetok');
 		if (i.readByte() != 0x1) throw "Unknown mode";
-		trace('mode');
 
 		var ser = i.rcvBytes(),
 				sig = i.rcvBytes();
 		//check signature
 		var uns:InServerMeta = Unserializer.run(ser.toString());
-		trace(uns);
 		checkSign(ser, uns.stamp, sig);
-		trace('sign ok');
 
+		readToFile(i, outFile);
+
+		if (i.readByte() != 0xf5) throw "Invalid eof byte";
+		return uns;
+	}
+
+	function readToFile(i:Input, outFile:Output)
+	{
 		var size = i.readInt32();
-		trace(size);
 		var buf = Bytes.alloc(bufSize);
 		while( size > 0 ) {
 			var len = i.readBytes(buf,0,size < bufSize ? size : bufSize);
-			trace(len,size);
 			if( len == 0 )
 				throw Error.Blocked;
 			outFile.writeFullBytes(buf,0,len);
 			size -= len;
 		}
 		outFile.close();
-		trace('ok');
+	}
 
-		if (i.readByte() != 0xf5) throw "Invalid eof byte";
-		return uns;
+	public function toClient(out:Output, meta:OutServerMeta, filepath:Null<String>):Void
+	{
+		out.writeByte(0xca);
+		sendBytes(out, Bytes.ofString( Serializer.run(meta) ));
+		if (filepath != null && sys.FileSystem.exists(filepath))
+		{
+			out.writeByte(0x7c);
+			var size = sys.FileSystem.stat(filepath).size,
+					inp = sys.io.File.read(filepath);
+			out.writeInt32(size);
+			out.writeInput(inp,bufSize);
+		} else {
+			out.writeByte(0x4a);
+		}
+
+		out.writeByte(0xf5);
+	}
+
+	public function fromServer(i:Input, outFile:Output):OutServerMeta
+	{
+		if (i.readByte() != 0xca) throw "Unknown response";
+		var ret = Unserializer.run( rcvBytes(i).toString() );
+		switch (i.readByte()) {
+			case 0x7c:
+				readToFile(i,outFile);
+			case 0x4a:
+				outFile.close();
+			case b:
+				throw "Unknown reponse: " + b;
+		}
+		if (i.readByte() != 0xf5) throw "Unknown end response";
+
+		return ret;
 	}
 
 	inline private static function sendBytes(out:Output, str:Bytes)
@@ -106,31 +139,36 @@ class Protocol
 
 typedef InServerMeta =
 {
-	setupShell:Null<String>,
-	mainApp:AppType,
-	cleanupShell:Null<String>,
+	setup:Array<ShellCmd>,
+	mainAppGui:{ appId:String, listenFileEnd:ShellEcho },
+	mainAppShell:Array<ShellCmd>,
+	cleanup:Array<ShellCmd>,
 
-	listenFileEnd:String,
-	listenFolder:String,
-	maxSecsTimeout:Float,
+	sendFile:Null<ShellEcho>,
 
 	?stamp:Int
 }
 
 enum AppType {
-	GUI(appId:String);
-	CMD(appPath:String);
+	GUI(appId:String, listenFileEnd:String);
+	SHELL(shell:Array<CmdRet>);
 }
 
 enum OutServer
 {
-	Data(data:OutServerData);
-	OpenError(msg:String);
-	OtherError(msg:String);
+	Data(data:OutServerMeta);
+	OpenError;
+	OtherError;
 }
 
-typedef OutServerData =
+typedef OutServerMeta =
 {
-	results:Array<{ filename:String, contents:Bytes }>,
-	didEnd:Bool
+	setup:Array<CmdRet>,
+	mainAppGui:Null<CmdRet>,
+	mainAppShell:Array<CmdRet>,
+	cleanup:Array<CmdRet>,
 }
+
+typedef ShellCmd = String;
+typedef CmdRet = { out:String, exit:Int };
+typedef ShellEcho = String;

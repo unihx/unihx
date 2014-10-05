@@ -1,8 +1,12 @@
 -cpp bin
 -D static_link
+-D HXCPP_CHECK_POINTER
 -cp src
 -main Main
+-lib mcli
+
 --next
 -neko bin/client.n
 -cp src
 -main Client
+-lib mcli
