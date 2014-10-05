@@ -1,17 +1,11 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <UIKit/UIKit.h>
-/* #include <CoreFoundation/CoreFoundation.h> */
 #include <stdio.h>
 #include <dlfcn.h>
 
 const char *hxRunLibrary();
 void hxcpp_set_top_of_stack();
    
-/* #ifndef SPRINGBOARDSERVICES_H_ */
-/* extern int SBSLaunchApplicationWithIdentifier(CFStringRef identifier, Boolean suspended); */
-/* extern CFStringRef SBSApplicationLaunchingErrorString(int error); */
-/* #endif */
-
 static int (*pvt_launchApplication)(CFStringRef, Boolean);
 static CFStringRef (*pvt_errorString)(int);
 static void (*pvt_setBacklight)(float);
@@ -44,7 +38,7 @@ void mainSetScreenDim(float val)
 	}
 }
 
-char *mainLaunchApplication(char *name, int suspended)
+char *mainLaunchApplication(const char *name, int suspended)
 {
 	@autoreleasepool { 
 		int ret;
@@ -101,22 +95,9 @@ int main(int argc, char **argv, char **envp)
 		err = hxRunLibrary();
 		if (err) {
 				printf(" Error %s\n", err );
+				return -1;
 		}
 
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s com.application.identifier \n", argv[0]);
-        return -1;
-    }
-
-		ret = mainLaunchApplication(argv[1], FALSE);
-
-    if (ret != NULL) 
-		{
-        fprintf(stderr, "Couldn't open application: %s. Reason: %s\n", argv[1], ret);
-				free(ret);
-				return -1;
-    }
-
-    return 0;
+		return 0;
 }
 

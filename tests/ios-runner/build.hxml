@@ -2,3 +2,7 @@
 -D static_link
 -cp src
 -main Main
+--next
+-neko bin/client.n
+-cp src
+-main Client
