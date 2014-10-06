@@ -4,7 +4,7 @@ env:
   global:
     - OS=mac # add this too to let the script know that the OS is a mac
       # REMOTE_SHARED
-    - secure: "HIv2v0Km0H/OffBnACWbeMebqbBxLxqTrBmNl2IMtVv6zHbi/VNqFA2R84eQNdJrlC9sycSKF6QMyaL3DxiRphLwt+/nsjU3r6StoapNTP9yCQDJJWyQZs4Pz+5/Qx95mVgD0ulvcLj5BaPGXnwLHhJPKyaauMWXQR3KUav+i1Y="
+    - secure: "bE3EqReyQFIQmMXQDEX/mgRbh+vzqDTzF6RMynjXaTUI9TsPTAwywwRLC7c+WpPfoidRnNnXLK8Qplde5wip1tliLvfaBErMkk8m9MmHUpfrAnLnqN2gqeAtTHbx5yhy+VV0XzIRDvcqq6Fw0XI92o5+twF24qv9Q+23R2sgLb8="
       # REMOTE_ARGS
     - secure: "qag9oZXj5E4TJ03VCyoY230Qaree3YxvFXZo609DsOYxtEwLG+luFAiV8YKxAdTimWFMXwGrpoEp4j+sWWTiwBgz35On6awUd34CBNs5t/DZZna9MJgrLpQQMwzY7yUm0Eof2U3dLLddmUpnlRA9O819mMkbIBh+5gKFCPkPohE="
   matrix:
