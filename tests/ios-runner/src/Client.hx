@@ -14,7 +14,7 @@ class Client
 		new mcli.Dispatch(Sys.args()).dispatch(new ClientCmd());
 	}
 
-	public static function run(cmd:ClientCmd, host:String, port:Int)
+	static function runServer(cmd:ClientCmd, host:String, port:Int):OutServerMeta
 	{
 		var proto = new Protocol(Bytes.ofString(cmd.secret)),
 				sock = new Socket();
@@ -24,7 +24,30 @@ class Client
 		trace('sending...');
 		proto.toServer(sock.output, config, cmd.sendFile);
 		trace('sent. waiting reponse');
-		var ret = proto.fromServer(sock.input, sys.io.File.write( cmd.out ));
+		return proto.fromServer(sock.input, sys.io.File.write( cmd.out ));
+	}
+
+	public static function run(cmd:ClientCmd, host:String, port:Int)
+	{
+		var ret = null;
+		while (ret == null)
+		{
+			try
+			{
+				ret = runServer(cmd,host,port);
+			}
+			catch(e:Dynamic)
+			{
+				trace("Error received: " + e);
+				trace(haxe.CallStack.toString( haxe.CallStack.exceptionStack() ));
+				if (--cmd.retries <= 0)
+				{
+					trace('Max retries reached');
+					Sys.exit(2);
+				}
+			}
+		}
+
 		var allOk = true;
 		for (r in ret.setup)
 			allOk = printRet(r) && allOk;
@@ -79,6 +102,11 @@ class ClientCmd extends mcli.CommandLine
 		@alias c
 	**/
 	public var config:String = "iosrun.json";
+
+	/**
+		Amount of times to retry
+	**/
+	public var retries:Int = 0;
 
 	/**
 		Show this message.

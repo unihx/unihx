@@ -3,34 +3,27 @@ language: objective-c # change this to c to test on a linux machine
 env:
   global:
     - OS=mac # add this too to let the script know that the OS is a mac
-      # - ARCH=i686 # add this to run in 32-bit mode. See availability at README
+      # REMOTE_SHARED
+    - secure: "av/qKSb1HYVWUTlb5DfL5oIYaX/HPMOcxF+nGBQJbwC+aRf+FDz2RauCa9O96yRxHSEXJp8C7n4Tccwr8leSN1DG1daLc5LUzGA8oQIz8d0LMCVKIzsB7wM9YJHV+rJaPTfJk1f8939DiPTDUhDtUXrKeXQ2aUD+O3WGPFtLBOI="
+      # REMOTE_ARGS
+    - secure: "Q9j2IqaElnpeQZL/83w0pyEsV96B/FK9GY6cHETShdtttk+5H+PHDf7xkD/DKFu6+V3cjOt0O+eQZbQS1laIlqbwkGUTrjQkVPV79/uQ4nYR04DVvx8U8bfmWvOJJRAfEzTLB+NnEY0FeWjaebMm0iLeFYfs3lJzIHaILEfPQpQ="
   matrix:
-    - TARGET=cs
+    - TARGET=cs DEVICE=desktop
+    - TARGET=cs DEVICE=ios
 
 matrix:
   fast_finish: true
+  allow_failures:
+    - env: TARGET=cs DEVICE=ios
 
 before_install: # clone travis-hx repo
   - travis_retry git clone --depth=50 --branch=master git://github.com/waneck/travis-hx.git ~/travis-hx
 
 install: # setup the target
   - ~/travis-hx/setup.sh
-  - haxelib install utest
+  - haxelib install utest mcli
   - haxelib dev unihx "$TRAVIS_BUILD_DIR"
-  - cd ~
-  - curl -L "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoQmpOYW44S2c3SU0" -o mac.tar.gz
-  - tar -zxf mac.tar.gz
-  - chmod +x test.app/Contents/MacOS/test
 
 script:
   - cd $TRAVIS_BUILD_DIR/tests
-    # build the target. This will call haxe with the HXFLAGS and HXFLAGS_EXTRA environment variables
-  - haxe build.hxml
-  - mono --debug bin/bin/CmdTests-Debug.exe
-  - haxe build-unity.hxml
-  - cp bin/bin/bin-Debug.dll ~/test.app/Contents/Data/Managed
-  - cd ~
-  - ./test.app/Contents/MacOS/test
-  - cat /tmp/unity_test_result.txt
-  - cat /tmp/.unity_no_errors
-    # will fail if .noErrors file is not created
+  - bash -x run-travis.sh
