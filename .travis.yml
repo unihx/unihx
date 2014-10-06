@@ -4,9 +4,9 @@ env:
   global:
     - OS=mac # add this too to let the script know that the OS is a mac
       # REMOTE_SHARED
-    - secure: "av/qKSb1HYVWUTlb5DfL5oIYaX/HPMOcxF+nGBQJbwC+aRf+FDz2RauCa9O96yRxHSEXJp8C7n4Tccwr8leSN1DG1daLc5LUzGA8oQIz8d0LMCVKIzsB7wM9YJHV+rJaPTfJk1f8939DiPTDUhDtUXrKeXQ2aUD+O3WGPFtLBOI="
+    - secure: "HIv2v0Km0H/OffBnACWbeMebqbBxLxqTrBmNl2IMtVv6zHbi/VNqFA2R84eQNdJrlC9sycSKF6QMyaL3DxiRphLwt+/nsjU3r6StoapNTP9yCQDJJWyQZs4Pz+5/Qx95mVgD0ulvcLj5BaPGXnwLHhJPKyaauMWXQR3KUav+i1Y="
       # REMOTE_ARGS
-    - secure: "Q9j2IqaElnpeQZL/83w0pyEsV96B/FK9GY6cHETShdtttk+5H+PHDf7xkD/DKFu6+V3cjOt0O+eQZbQS1laIlqbwkGUTrjQkVPV79/uQ4nYR04DVvx8U8bfmWvOJJRAfEzTLB+NnEY0FeWjaebMm0iLeFYfs3lJzIHaILEfPQpQ="
+    - secure: "bXPdcn8ILF/Im5RNTxbEMoO/ttfOvDNd9D9RId5C3KNmXCq+r/vF47V+lpcQAY6CmhYGVog9lYuh1EFDKlronozE+YcGjnCOG9YljWviIvc32pOxblbU7we+Vj1cpUqRetTMkqD3GysZsVLTH/PJMrRro3wVTfNrWijqvqraa0A="
   matrix:
     - TARGET=cs DEVICE=desktop
     - TARGET=cs DEVICE=ios
@@ -27,4 +27,4 @@ install: # setup the target
 
 script:
   - cd $TRAVIS_BUILD_DIR/tests
-  - bash -x run-travis.sh
+  - ./run-travis.sh
