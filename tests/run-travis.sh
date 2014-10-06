@@ -1,11 +1,12 @@
 #!/bin/bash
 ORIGINAL=$PWD
+source ~/travis-hx/defaults.sh
 
 case ${DEVICE} in
 	desktop )
 		cd ~
 		# download mac unity example app executable
-		travis_retry curl -L "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoQmpOYW44S2c3SU0" -o mac.tar.gz || exit 1
+		retry curl -L "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoQmpOYW44S2c3SU0" -o mac.tar.gz || exit 1
 		tar -zxf mac.tar.gz || exit 1
 		chmod +x test.app/Contents/MacOS/test
 
@@ -28,10 +29,10 @@ case ${DEVICE} in
 	ios )
 		cd ~
 		# download example ios app project
-		travis_retry curl -L "http://waneck-pub.s3-website-us-east-1.amazonaws.com/unitdeps/unity/proj-1.tgz" -o proj-1.tgz || exit 1
+		retry curl -L "http://waneck-pub.s3-website-us-east-1.amazonaws.com/unitdeps/unity/proj-1.tgz" -o proj-1.tgz || exit 1
 		tar -zxf proj-1.tgz || exit 1
 		# download ios tools
-		travis_retry curl -L "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoU1p1dktXanI4M3c" -o iostools.tgz || exit 1
+		retry curl -L "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoU1p1dktXanI4M3c" -o iostools.tgz || exit 1
 		tar -zxf iostools.tgz || exit 1
 		chmod +x iostools/ldid
 		chmod +x iostools/Tools/OSX/mono-xcompiler
