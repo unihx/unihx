@@ -21,7 +21,8 @@ before_install: # clone travis-hx repo
 
 install: # setup the target
   - ~/travis-hx/setup.sh
-  - haxelib install utest mcli
+  - haxelib install utest
+  - haxelib install mcli
   - haxelib dev unihx "$TRAVIS_BUILD_DIR"
 
 script:
