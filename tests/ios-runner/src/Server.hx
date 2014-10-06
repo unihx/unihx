@@ -16,7 +16,7 @@ class Server
 
 	public static function listen(cmd:ServerCmd, port:Int)
 	{
-		var proto = new Protocol(Bytes.ofString('teste')),
+		var proto = new Protocol(Bytes.ofString(cmd.secret)),
 				sock = new Socket();
 
 		timeout_secs = cmd.timeout;
