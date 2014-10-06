@@ -1,0 +1,4 @@
+-neko bin/client.n
+-cp src
+-main Client
+-lib mcli

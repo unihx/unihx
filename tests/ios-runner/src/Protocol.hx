@@ -119,12 +119,13 @@ class Protocol
 		return ret;
 	}
 
-	inline private function sign(data:Bytes):Bytes
+	private function sign(data:Bytes):Bytes
 	{
-		return hmac.make(secret,data);
+		var ret = hmac.make(secret,data);
+		return ret;
 	}
 
-	private function checkSign(data:Bytes, stamp:Int, signature:Bytes):Bool
+	private function checkSign(data:Bytes, stamp:Int, signature:Bytes)
 	{
 		// check timeout
 		var current = Std.int( Date.now().getTime() / 15000 );
@@ -133,7 +134,9 @@ class Protocol
 			throw 'Old timestamp: Current ${Date.now()}; Sent ${Date.fromTime(stamp * 15000.0)}';
 		}
 
-		return hmac.make(secret,data).compare(signature) == 0;
+		var c1 =  hmac.make(secret,data);
+		if (c1.compare(signature) != 0)
+			throw "Bad signature";
 	}
 }
 

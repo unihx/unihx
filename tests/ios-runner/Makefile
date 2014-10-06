@@ -1,4 +1,3 @@
-IPHONE_IP:=
 PROJECTNAME:=ios-test-runner
 
 # if compiling on Mac, find SDK path and compile with this env var

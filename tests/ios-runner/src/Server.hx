@@ -5,18 +5,23 @@ import cpp.vm.*;
 
 using StringTools;
 
-class Main
+class Server
 {
-	static var timeout_secs = 5 * 60;
-	static var logDir = '/var/log/ios-runner/';
+	static var timeout_secs:Float;
 
 	static function main()
 	{
+		new mcli.Dispatch(Sys.args()).dispatch(new ServerCmd());
+	}
+
+	public static function listen(cmd:ServerCmd, port:Int)
+	{
 		var proto = new Protocol(Bytes.ofString('teste')),
 				sock = new Socket();
+
+		timeout_secs = cmd.timeout;
 		sock.setTimeout(5);
-		var port = Std.parseInt(Sys.args()[0]);
-		sock.bind(new Host('0.0.0.0'), port );
+		sock.bind(new Host(cmd.host), port );
 		trace('listening',port);
 		sock.listen(5);
 
@@ -25,8 +30,8 @@ class Main
 		{
 			var s2 = sock.accept();
 			var filename = DateTools.format(Date.now(), '%Y%m%d_%H%M%S-${i++}');
-			var path = '/tmp/' + filename;
-			var file = sys.io.File.write('$logDir/$filename.log');
+			var path = cmd.tmpDir + filename;
+			var file = sys.io.File.write('${cmd.logDir}/$filename.log');
 			try
 			{
 				s2.waitForRead();
@@ -171,6 +176,7 @@ class Main
 		var threads = [];
 
 		// spawn stdout/stderr handlers
+		var waiting = new Deque();
 		for (input in [proc.stdout, proc.stderr])
 		{
 			threads.push(Thread.create(function() {
@@ -184,14 +190,17 @@ class Main
 					}
 				}
 				catch(e:haxe.io.Eof) {}
+				waiting.push(true);
 			}));
 		}
 
-		var cur = Date.now().getTime();
-		// spawn waiting thread
-		var ret = new Deque(),
+		var cur = Date.now().getTime(),
 				ended = new Lock();
+		// spawn waiting thread
+		var ret = new Deque();
 		threads.push(Thread.create(function() {
+			for (i in 0...2)
+				waiting.pop(true); // wait until process finishes
 			ret.add(proc.exitCode());
 			ended.release();
 		}));
@@ -213,7 +222,69 @@ class Main
 		{
 			write('Assertation - id == null');
 		}
+		try { proc.stdout.close(); } catch(e:Dynamic) {}
+		try { proc.stderr.close(); } catch(e:Dynamic) {}
+		try { proc.close(); } catch(e:Dynamic) {}
 
 		return { out:out.toString(), exit: id };
+	}
+}
+
+/**
+	iOs test runner server. Listens for connections and executes the application
+**/
+class ServerCmd extends mcli.CommandLine
+{
+	/**
+		Sets the shared secret between peers
+		@alias s
+	**/
+	public var secret:String = "notasecret";
+
+	/**
+		Sets the host to listen for connections
+		@alias h
+	**/
+	public var host:String = "0.0.0.0";
+
+	/**
+		Sets the maximum number of connections to wait. Defaults to 5
+		@alias m
+	**/
+	public var maxConnections:Int = 5;
+
+	/**
+		Sets the number of seconds to wait until a timeout is issued. Defaults to (5 * 60) seconds
+	**/
+	public var timeout:Float = 5 * 60;
+
+	/**
+		Sets the temp directory where the files will be stored
+	**/
+	public var tmpDir:String = "/tmp/";
+
+	/**
+		Sets the log dir
+	**/
+	public var logDir:String = "/var/log/ios-runner/";
+
+	/**
+		Show this message.
+	**/
+	public function help()
+	{
+		Sys.println(this.showUsage());
+		Sys.exit(0);
+	}
+
+	/**
+		Listens for connections at <port>
+	**/
+	public function listen(port:Int)
+	{
+		if (port == 0)
+			throw 'You must enter a port';
+
+		Server.listen(this, port);
 	}
 }

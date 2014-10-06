@@ -3,6 +3,7 @@ import haxe.io.*;
 import sys.FileSystem.*;
 
 import Protocol;
+using StringTools;
 
 class Client
 {
@@ -39,7 +40,8 @@ class Client
 
 	private static function printRet(ret:CmdRet):Bool
 	{
-		Sys.println(ret.out);
+		if (ret.out.trim().length > 0)
+			Sys.println(ret.out);
 		if (ret.exit != 0)
 		{
 			Sys.stderr().writeString('Command returned: ${ret.exit}\n');

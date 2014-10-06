@@ -2,11 +2,8 @@
 -D static_link
 -D HXCPP_CHECK_POINTER
 -cp src
--main Main
+-main Server
 -lib mcli
 
 --next
--neko bin/client.n
--cp src
--main Client
--lib mcli
+build-client.hxml
