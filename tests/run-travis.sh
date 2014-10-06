@@ -39,12 +39,12 @@ case ${DEVICE} in
 
 		# build ios-runner
 		cd $ORIGINAL/ios-runner
-		echo "Client build"
+		echo "`date +%M%S` Client build"
 		haxe build-client.hxml || exit 1
 		cp bin/client.n ~/ios-remote.n
 
 		cd $ORIGINAL
-		echo "Unity DLL build"
+		echo "`date +%M%S` Unity DLL build"
 		# build as we would for unity example app
 		haxe build-unity.hxml || exit 1
 
@@ -57,14 +57,14 @@ case ${DEVICE} in
 		# xcompile
 		cd ~/proj-1/Data/Managed
 		for file in *.dll; do
-			echo "AOT compiling $file"
+			echo "`date +%M%S` AOT compiling $file"
 			~/iostools/Tools/OSX/mono-xcompiler --aot=full,asmonly,nodebug,static,outfile=$file.s $file > /tmp/mono-out.out || (cat /tmp/mono-out; exit 1)
 		done
 		mv *.s ../../Libraries || exit 1
 
 		# build using xcode but do not sign
 		cd ../../
-		echo "XCode compiling"
+		echo "`date +%M%S` XCode compiling"
 		xcodebuild -alltargets -configuration Debug clean build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO > /tmp/xcode-out.out || (cat /tmp/xcode-out.out; exit 1)
 		# fake sign
 		~/iostools/ldid -S build/ProductName.app/ProductName || exit 1
@@ -74,7 +74,7 @@ case ${DEVICE} in
 		cd build
 		tar -zcf ios-app.tar.gz ProductName.app
 
-		echo "Remote iOs test"
+		echo "`date +%M%S` Remote iOs test"
 		neko ~/ios-remote.n --retries 5 -s "$IOS_REMOTE_SHARED" -c "$ORIGINAL/config.json" -f 'ios-app.tar.gz' --connect $IOS_REMOTE_ARGS || exit 1
 		;;
 esac
