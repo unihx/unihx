@@ -20,6 +20,7 @@ install: # clone travis-hx repo and setup the target
 
 build_script:
   - cd \projects\unihx\tests
+  - csc -help
   - haxe build.hxml -D verbose -D no-compilation
   - cd bin
   # - haxelib run hxcs hxcs_build.txt --haxe-version 3200
