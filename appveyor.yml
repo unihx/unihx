@@ -20,7 +20,8 @@ install: # clone travis-hx repo and setup the target
 
 build_script:
   - cd \projects\unihx\tests
-  - haxe build.hxml
+  - haxe build.hxml -v
+  # - msbuild  /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - bin\bin\CmdTests-Debug.exe
   - copy bin\bin\bin-Debug.dll test_Data\Managed
   - test.exe
