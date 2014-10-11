@@ -1,6 +1,5 @@
 ![unihx logo](/extra/assets/unihx_logo_complete.png?raw=true)
 
-# unihx
 Unity-Haxe tools. Compile to Unity3D from Haxe.
 
 ## Goal
