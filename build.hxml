@@ -2,5 +2,5 @@
 -net-lib lib/UnityEditor.dll
 -cs tests/bin
 -cp tests/src
--cp .
+-cp src
 -main CmdTests
