@@ -11,7 +11,7 @@ install: # clone travis-hx repo and setup the target
   - SET PATH=c:\HaxeToolkit\haxe;C:\HaxeToolkit\neko;C:\Program Files\7-Zip\;%PATH%
   - haxelib install utest
   - haxelib dev unihx C:\projects\unihx
-  - cinst mono3 
+  # - cinst mono3 
   - cinst wget -x86
   - cd \projects\unihx\tests
   - wget "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoTmZDWDNBTWtIYjA" -O win32.tar.gz --no-check-certificate
