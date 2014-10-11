@@ -1,0 +1,26 @@
+clone_folder: c:\projects\unihx
+
+environment:
+  matrix:
+    - TARGET: cs
+
+install: # clone travis-hx repo and setup the target
+  - echo starting
+  - git clone --depth=50 --branch=master git://github.com/waneck/travis-hx.git C:\travis-hx
+  - C:\travis-hx\extra\appveyor\AppVeyor.exe setup
+  - SET PATH=c:\HaxeToolkit\haxe;C:\HaxeToolkit\neko;C:\Program Files\7-Zip\;%PATH%
+  - haxelib install utest
+  - haxelib dev unihx C:\projects\unihx
+  - cinst mono3 
+  - cinst wget -x86
+  - cd \projects\unihx\tests
+  - wget "https://docs.google.com/uc?export=download&id=0B8FjDKR0nfqoTmZDWDNBTWtIYjA" -O win32.tar.gz --no-check-certificate
+  - 7z x win32.tar.gz
+  - 7z x win32.tar
+
+build_script:
+  - cd \projects\unihx\tests
+  - haxe build.hxml
+  - bin\bin\CmdTests-Debug.exe
+  - copy bin\bin\bin-Debug.dll test_Data\Managed
+  - test.exe
