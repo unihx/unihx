@@ -23,6 +23,7 @@ build_script:
   - haxe build.hxml -D verbose -D no-compilation
   - cd bin
   # - haxelib run hxcs hxcs_build.txt --haxe-version 3200
+  #
   - neko C:\HaxeToolkit\haxe\lib\hxcs\git\run.n hxcs_build.txt --haxe-version 3200
   # - msbuild  /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - bin\bin\CmdTests-Debug.exe
