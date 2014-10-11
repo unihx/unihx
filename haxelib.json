@@ -1,0 +1,12 @@
+{
+	"name": "unihx",
+	"url": "https://github.com/waneck/unihx",
+	"license": "MIT",
+	"tags": ["unity","unity3d","cs","3d"],
+	"description": "Unity3D tools to target unity from Haxe",
+	"classPath": "src",
+	"version": "0.0.1",
+	"releasenote": "First release; Still a little unstable",
+	"contributors": ["waneck"],
+	"dependencies": {}
+}
