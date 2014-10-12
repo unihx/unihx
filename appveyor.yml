@@ -21,12 +21,8 @@ install: # clone travis-hx repo and setup the target
 build_script:
   - cd \projects\unihx\tests
   - csc -help
-  - haxe build.hxml -D verbose -D no-compilation
-  - cd bin
-  # - haxelib run hxcs hxcs_build.txt --haxe-version 3200
-  #
-  - neko C:\HaxeToolkit\haxe\lib\hxcs\git\run.n hxcs_build.txt --haxe-version 3200
-  # - msbuild  /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - haxe build.hxml
   - bin\bin\CmdTests-Debug.exe
+  - haxe build-unity.hxml
   - copy bin\bin\bin-Debug.dll test_Data\Managed
   - test.exe
