@@ -23,17 +23,17 @@ package unityengine;
 		return Data.op_Division(a,b);
 	}
 
-	@:from @:extern inline public static function fromVec3(v:Vector3):Vector4
+	@:extern inline public static function fromVec3(v:Vector3):Vector4
 	{
 		return new Vector4(v.x,v.y,v.z,0);
 	}
 
-	@:from @:extern inline public static function fromVec2(v:Vector2):Vector4
+	@:extern inline public static function fromVec2(v:Vector2):Vector4
 	{
 		return new Vector4(v.x,v.y,0,0);
 	}
 
-	@:to @:extern inline public function toVec2():Vector2
+	@:extern inline public function toVec2():Vector2
 	{
 		return new Vector2(this.x,this.y);
 	}

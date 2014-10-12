@@ -8,9 +8,48 @@ using StringTools;
 {
 	static function __init__()
 	{
-		trace('working 2');
+		unityeditor.EditorApplication.hierarchyWindowItemOnGUI += function(instanceId:Int, r:Rect) {
+			var obj = DragAndDrop.objectReferences;
+			if (obj == null || obj.Length == 0 || !r.Contains(Event.current.mousePosition))
+			{
+				return;
+			}
+
+			var _target = EditorUtility.InstanceIDToObject(instanceId);
+			if (!Std.is(_target,GameObject))
+			{
+				return;
+			}
+
+			if (AssetDatabase.GetAssetPath(DragAndDrop.objectReferences[0]).endsWith('.hx'))
+			{
+				var last = GUI.color;
+				GUI.color = new Color(164 / 255, 211 / 255, 237 / 255, 0.5);
+				GUI.Box(r,"");
+				switch(Event.current.type)
+				{
+					case DragUpdated | DragExited:
+						DragAndDrop.visualMode = Link;
+						Event.current.Use();
+
+					case DragPerform:
+						DragAndDrop.visualMode = Link;
+						DragAndDrop.AcceptDrag();
+						Event.current.Use();
+						var _target:GameObject = cast _target;
+						var ret = _target.gameObject.AddComponent(DragAndDrop.objectReferences[0].name);
+						if (ret == null)
+							EditorUtility.DisplayDialog('Can\'t add script','Can\'t add script behaviour "${DragAndDrop.objectReferences[0].name}"',"OK");
+
+					case _:
+				}
+			}
+
+		};
+
 		unityeditor.EditorApplication.projectWindowItemOnGUI += function(s:String, r:Rect) {
 			var file = AssetDatabase.GUIDToAssetPath(s);
+			var size = 64;
 			switch(file.split('.').pop())
 			{
 				case 'hx' | 'hxml':
@@ -43,11 +82,13 @@ using StringTools;
 							new Rect(centerx - rmin / 2, centery - rmin/2, rmin, rmin);
 						}
 					} else {
+						if (rmin <= 16)
+							size = 16;
 						// icon in list
 						new Rect(r.x,r.y,rmin,rmin);
 					}
 
-					var tex = (file.endsWith('.hx')) ? 'unihx_logo_64.png' : 'unihx_config_logo_64.png';
+					var tex = (file.endsWith('.hx')) ? 'unihx_logo_$size.png' : 'unihx_config_logo_$size.png';
 					GUI.DrawTexture(rect, cast AssetDatabase.LoadAssetAtPath( 'Assets/Editor Default Resources/unihx/$tex', cs.Lib.toNativeType(Texture2D)));
 			}
 		};

@@ -7,12 +7,10 @@ using StringTools;
 import sys.FileSystem.*;
 
 @:meta(UnityEditor.CustomEditor(typeof(UnityEngine.Object)))
-@:meta(UnityEditor.CanEditMultipleObjects)
 @:nativeGen
 @:native('ExamplePreview')
 class ExamplePreview extends Editor
 {
-	private var _target(get,never):Object;
 	private var prop:HxmlProps;
 	private var scroll:Vector2;
 
@@ -21,14 +19,9 @@ class ExamplePreview extends Editor
 		Repaint();
 	}
 
-	inline private function get__target():Object
-	{
-		return cast this.target;
-	}
-
 	@:overload override public function OnInspectorGUI()
 	{
-		var path = AssetDatabase.GetAssetPath(_target);
+		var path = AssetDatabase.GetAssetPath(target);
 		switch (path.split('.').pop())
 		{
 			case 'hxml' if (path.endsWith('build.hxml')):
@@ -38,27 +31,37 @@ class ExamplePreview extends Editor
 					this.prop.reload();
 				}
 				GUI.enabled = true;
-				scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
+				// scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
 				prop.OnGUI();
-				GUILayout.EndScrollView();
-				if (GUILayout.Button("Save",null))
+				// GUILayout.EndScrollView();
+
+				GUILayout.Space(5);
+				var buttonLayout = new cs.NativeArray(1);
+				buttonLayout[0] = GUILayout.MinHeight(33);
+				if (GUILayout.Button("Save",buttonLayout))
 				{
 					prop.save();
 				}
-				if (GUILayout.Button("Reload",null))
+				GUILayout.Space(5);
+				if (GUILayout.Button("Reload",buttonLayout))
 				{
 					prop.reload();
 				}
-				if (GUILayout.Button("Force recompile",null))
+				GUILayout.Space(5);
+				if (GUILayout.Button("Force Recompilation",buttonLayout))
 				{
 					// prop.compile(['--cwd','./Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
 					unityeditor.AssetDatabase.Refresh();
 				}
+				Repaint();
+
 			case 'hx' | 'hxml':
 				GUI.enabled = true;
 				scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
-				GUILayout.Label(sys.io.File.getContent( AssetDatabase.GetAssetPath(_target) ), null);
+				GUI.enabled = false;
+				GUILayout.Label(sys.io.File.getContent( AssetDatabase.GetAssetPath(target) ), null);
 				GUILayout.EndScrollView();
+
 			case _:
 				super.OnInspectorGUI();
 		}
@@ -77,8 +80,6 @@ class HxmlProps implements InspectorBuild
 		Choose how will Haxe classes be compiled
 	**/
 	public var compilation:Comp;
-
-	public var _:Space;
 
 	public var verbose:Bool;
 

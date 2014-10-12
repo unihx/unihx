@@ -33,10 +33,10 @@ class AllowDragDrop extends Editor
 		switch(Event.current.type)
 		{
 			case DragUpdated | DragExited if (AssetDatabase.GetAssetPath(DragAndDrop.objectReferences[0]).endsWith('.hx')):
-				DragAndDrop.visualMode = Link;
+				DragAndDrop.visualMode = Generic;
 				Event.current.Use();
 			case DragPerform if (AssetDatabase.GetAssetPath(DragAndDrop.objectReferences[0]).endsWith('.hx')):
-				DragAndDrop.visualMode = Link;
+				DragAndDrop.visualMode = Generic;
 				DragAndDrop.AcceptDrag();
 				Event.current.Use();
 				var ret = _target.gameObject.AddComponent(DragAndDrop.objectReferences[0].name);

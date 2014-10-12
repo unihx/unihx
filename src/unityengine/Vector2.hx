@@ -23,12 +23,12 @@ package unityengine;
 		return Data.op_Division(a,b);
 	}
 
-	@:to @:extern inline public function toVec3():Vector3
+	@:extern inline public function toVec3():Vector3
 	{
 		return new Vector3(this.x,this.y);
 	}
 
-	@:to @:extern inline public function toVec4():Vector4
+	@:extern inline public function toVec4():Vector4
 	{
 		return new Vector4(this.x,this.y);
 	}
