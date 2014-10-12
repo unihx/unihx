@@ -26,3 +26,5 @@ build_script:
   - haxe build-unity.hxml
   - copy bin\bin\bin-Debug.dll test_Data\Managed
   - test.exe
+  - cat %TEMP%/unity_test_result.txt
+  - cat /tmp/.unity_no_errors
