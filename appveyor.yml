@@ -16,3 +16,5 @@ build_script:
   - cd \projects\unihx\tests
   - haxe build.hxml
   - bin\bin\CmdTests-Debug.exe
+
+test: off
