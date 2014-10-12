@@ -26,7 +26,10 @@ class AllowDragDrop extends Editor
 	{
 		var obj = DragAndDrop.objectReferences;
 		if (obj == null || obj.Length == 0)
+		{
+			super.OnInspectorGUI();
 			return;
+		}
 		switch(Event.current.type)
 		{
 			case DragUpdated | DragExited if (AssetDatabase.GetAssetPath(DragAndDrop.objectReferences[0]).endsWith('.hx')):

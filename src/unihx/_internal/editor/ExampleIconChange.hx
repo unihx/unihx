@@ -44,7 +44,7 @@ using StringTools;
 						}
 					} else {
 						// icon in list
-						new Rect(r.x,r.y,width,height);
+						new Rect(r.x,r.y,rmin,rmin);
 					}
 
 					var tex = (file.endsWith('.hx')) ? 'unihx_logo_64.png' : 'unihx_config_logo_64.png';
