@@ -1,6 +1,6 @@
 package unityengine;
 
-@:final @:csNative @:native("UnityEngine.Vector4") extern class Vector4Data extends cs.system.ValueType
+@:struct @:final @:csNative @:native("UnityEngine.Vector4") extern class Vector4Data extends cs.system.ValueType
 {
 	var magnitude(get,never) : Single;
 	var normalized(get,never) : Vector4;

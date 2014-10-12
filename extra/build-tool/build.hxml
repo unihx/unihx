@@ -1,4 +1,5 @@
 -cp src
+-cp ../../src
 -neko ../../run.n
 -main Cli
 -lib mcli

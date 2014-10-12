@@ -1,6 +1,6 @@
 package unityengine;
 
-@:final @:csNative @:native("UnityEngine.Color32") extern class Color32Data extends cs.system.ValueType
+@:struct @:final @:csNative @:native("UnityEngine.Color32") extern class Color32Data extends cs.system.ValueType
 {
 	var a : cs.types.UInt8;
 	var b : cs.types.UInt8;

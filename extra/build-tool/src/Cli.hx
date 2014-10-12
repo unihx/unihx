@@ -25,9 +25,28 @@ class Cli extends CommandLine
 	private function haxe(args:Array<String>)
 	{
 		print( 'haxe ' + [for (arg in args) arg.split('"').join('\\\"') ].join(" ") );
-		var ret = Sys.command('haxe ' + [for (arg in args) arg.split('"').join('\\\"') ].join(" "));
+		var ret = Sys.command('haxe', args);
 		if (ret != 0)
 			Sys.exit(ret);
+	}
+
+	private function deleteAll(dir:String)
+	{
+		for (f in readDirectory(dir))
+		{
+			if (isDirectory('$dir/$f'))
+			{
+				deleteAll('$dir/$f');
+			} else {
+				deleteFile('$dir/$f');
+			}
+		}
+		deleteDirectory(dir);
+	}
+
+	private function copy(file:String, to:String)
+	{
+		sys.io.File.saveBytes(to, sys.io.File.getBytes(file));
 	}
 
 	/**
@@ -66,10 +85,40 @@ class Cli extends CommandLine
 		var args = Sys.args();
 		if (Sys.getEnv('HAXELIB_RUN') == "1")
 		{
+			unihxPath = Sys.getCwd();
 			var curpath = args.pop();
 			Sys.setCwd(curpath);
 		}
 		new mcli.Dispatch(args).dispatch(new Helper());
+	}
+
+	private static var unihxPath:String = null;
+	private function getUnihxPath():String
+	{
+		if (unihxPath != null)
+			return unihxPath;
+		var p = new sys.io.Process('haxelib',['path','unihx']);
+		try
+		{
+			while(true)
+			{
+				var ln = p.stdout.readLine().trim();
+				if (ln.charCodeAt(0) != '-'.code && ln.indexOf('/src') >= 0 && exists(ln.substr(0,ln.length-1)))
+				{
+					unihxPath = ln.substr(0,ln.indexOf('/src'));
+					break;
+				}
+			}
+		}
+		catch(e:haxe.io.Eof)
+		{
+		}
+		if (p.exitCode() != 0 || unihxPath == null)
+		{
+			err('Cannot determine the path of the "unihx" project. Make sure haxelib is installed correctly, and unihx is installed through haxelib');
+		}
+
+		return unihxPath;
 	}
 }
 
@@ -85,6 +134,7 @@ class Helper extends CommandLine
 	{
 		d.dispatch(new InitCmd());
 	}
+
 }
 
 /**
@@ -125,10 +175,7 @@ class InitCmd extends Cli
 			sys.io.File.saveContent(assets + '/params.hxml', 'classpaths.hxml\n-lib unihx\n-cs hx-compiled\n-D unity_std_target=Standard Assets');
 			var old = Sys.getCwd();
 			Sys.setCwd(assets);
-			if (Sys.systemName() == "Windows")
-				haxe(['params.hxml',"--macro","include(\"unihx._internal.editor\")"]);
-			else
-				haxe(['params.hxml',"--macro","include\\(\"unihx._internal.editor\"\\)"]);
+			haxe(['params.hxml',"--macro","include(\"unihx._internal.editor\")"]);
 			Sys.setCwd(old);
 		}
 
@@ -146,6 +193,19 @@ class InitCmd extends Cli
 			}
 		}
 
+		// copy assets to Editor Default Resources
+		if (exists(assets + '/Editor Default Resources/unihx'))
+		{
+			deleteAll(assets + '/Editor Default Resources/unihx');
+		}
+
+		createDirectory(assets + '/Editor Default Resources/unihx');
+		var unihx = this.getUnihxPath() + "/extra/assets";
+		for (file in readDirectory(unihx))
+		{
+			if (file.endsWith('.png'))
+				copy('$unihx/$file', '$assets/Editor Default Resources/unihx/$file');
+		}
 	}
 
 	private function getAssets(dir:String):Null<String>

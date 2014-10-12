@@ -1,6 +1,6 @@
 package unityengine;
 
-@:final @:csNative @:native("UnityEngine.Quaternion") extern class QuaternionData extends cs.system.ValueType
+@:struct @:final @:csNative @:native("UnityEngine.Quaternion") extern class QuaternionData extends cs.system.ValueType
 {
 	var eulerAngles(get,set) : Vector3;
 	var w : Single;

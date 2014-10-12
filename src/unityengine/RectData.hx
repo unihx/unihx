@@ -1,6 +1,6 @@
 package unityengine;
 
-@:final @:csNative @:native("UnityEngine.Rect") extern class RectData extends cs.system.ValueType
+@:struct @:final @:csNative @:native("UnityEngine.Rect") extern class RectData extends cs.system.ValueType
 {
 	var bottom(get,never) : Single;
 	var center(get,set) : Vector2;

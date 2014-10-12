@@ -1,6 +1,6 @@
 package unityengine;
 
-@:final @:csNative @:native("UnityEngine.Bounds") extern class BoundsData extends cs.system.ValueType
+@:struct @:final @:csNative @:native("UnityEngine.Bounds") extern class BoundsData extends cs.system.ValueType
 {
 	var center(get,set) : Vector3;
 	var extents(get,set) : Vector3;

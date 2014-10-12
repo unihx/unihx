@@ -1,6 +1,6 @@
 package unityengine;
 
-@:final @:csNative @:native("UnityEngine.Matrix4x4") extern class Matrix4x4Data extends cs.system.ValueType
+@:struct @:final @:csNative @:native("UnityEngine.Matrix4x4") extern class Matrix4x4Data extends cs.system.ValueType
 {
 	var inverse(get,never) : Matrix4x4;
 	var isIdentity(get,never) : Bool;
