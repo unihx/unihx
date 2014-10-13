@@ -79,7 +79,9 @@ using StringTools;
 						} else {
 							// make icon inside the default icon
 							rmin = 24;
-							new Rect(centerx - rmin / 2, centery - rmin/2, rmin, rmin);
+							centery -= rmin/2;
+							centery += 2;
+							new Rect(centerx - rmin / 2, centery, rmin, rmin);
 						}
 					} else {
 						if (rmin <= 16)

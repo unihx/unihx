@@ -52,6 +52,33 @@ class Macro
 	}
 
 #if macro
+	private static function getDefault(t:Null<ComplexType>, pos:Position):Expr
+	{
+		switch (t)
+		{
+			case TAnonymous(fields):
+				var objDecl = [];
+				for (f in fields)
+				{
+					switch f.kind {
+						case FVar(_,null):
+							objDecl.push({ field:f.name, expr: macro @:pos(f.pos) cast null });
+						case FVar(t,e):
+							objDecl.push({ field:f.name, expr: e });
+							f.kind = FVar(t,null);
+						case _:
+					}
+				}
+				return { expr:EObjectDecl(objDecl), pos:pos };
+			case TPath({ name:"Fold", pack:[], params:[TPType(p)] } | { name:"Fold", pack:["unihx","inspector"], params:[TPType(p)] }):
+				var d = getDefault(p,pos);
+				if (d == null) d = macro null;
+				return macro new unihx.inspector.Fold($d);
+			case null | _:
+				return null;
+		}
+	}
+
 	public static function build(fieldName:Null<String>):Array<Field>
 	{
     if (defined('display'))
@@ -73,23 +100,7 @@ class Macro
 						addedFields.push(f);
 					if (e == null)
 					{
-						switch t {
-							case TAnonymous(fields):
-								var objDecl = [];
-								for (f in fields)
-								{
-									switch f.kind {
-										case FVar(_,null):
-											objDecl.push({ field:f.name, expr: macro @:pos(f.pos) cast null });
-										case FVar(t,e):
-											objDecl.push({ field:f.name, expr: e });
-											f.kind = FVar(t,null);
-										case _:
-									}
-								}
-								e = { expr:EObjectDecl(objDecl), pos:f.pos };
-							case null | _:
-						}
+						e = getDefault(t, f.pos);
 					}
 
 					if (e != null)
@@ -319,7 +330,7 @@ class Macro
 				var arr = [];
 				for (cf in fields)
 				{
-					var e =  exprFromType(ethis,cf);
+					var e =  exprFromType({ expr:EField(ethis, cf.name), pos:cf.pos },cf, cf.type);
 					if (e != null)
 						arr.push(e);
 				}
@@ -391,6 +402,22 @@ class Macro
 				return macro $ethis = unityeditor.EditorGUILayout.ColorField($guiContent, $ethis, $opts);
 			case 'Int' if (pack.length == 0):
 				return macro $ethis = unityeditor.EditorGUILayout.IntField($guiContent, $ethis, $opts);
+			case 'Fold' if (inspector && params.length == 1):
+				var all = exprFromType(macro $ethis.contents, field, params[0]);
+				return macro {
+					// unityeditor.EditorGUILayout.BeginVertical(null);
+					if ($ethis.folded = unityeditor.EditorGUILayout.Foldout($ethis.folded, $guiContent))
+					{
+						unityeditor.EditorGUI.indentLevel++;
+						// unityeditor.EditorGUILayout.BeginHorizontal(null);
+						// unityeditor.EditorGUILayout.Space();
+						$all;
+						unityeditor.EditorGUI.indentLevel--;
+						// unityeditor.EditorGUILayout.EndHorizontal();
+					}
+					// unityeditor.EditorGUILayout.EndVertical();
+				};
+
 			case 'Slider' if (inspector):
 				switch params {
 					case [ _.follow() => TAbstract(_.get() => { pack:[], name:name },_) ]: switch name {

@@ -127,7 +127,7 @@ class HxmlProps implements InspectorBuild
 				b.add('params.hxml\n');
 			case DontCompile:
 		}
-		if (advanced != null && advanced.verbose)
+		if (advanced != null && advanced.contents.verbose)
 			b.add('#verbose\n');
 		b.add('\n');
 		if (extraParams != null)
@@ -153,8 +153,8 @@ class HxmlProps implements InspectorBuild
 	{
 		var comp = DontCompile,
 				buf = new StringBuf();
-		if (advanced == null) advanced = cast {};
-		advanced.verbose = false;
+		if (advanced == null) advanced = new Fold(cast {});
+		advanced.contents.verbose = false;
 		try
 		{
 			var regex = ~/[ \t]+/g;
@@ -172,7 +172,7 @@ class HxmlProps implements InspectorBuild
 							Std.parseInt(portCmd[1]);
 						comp = CompilationServer(port);
 					case '#verbose':
-						advanced.verbose = true;
+						advanced.contents.verbose = true;
 					case 'params.hxml':
 						if (comp == DontCompile)
 							comp = Compile;
