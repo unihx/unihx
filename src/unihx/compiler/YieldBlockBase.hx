@@ -1,6 +1,7 @@
-package unihx.internal;
+package unihx.compiler;
 
-class YieldBase #if !macro implements cs.system.collections.IEnumerator #end
+class YieldBlockBase
+	#if cs implements cs.system.collections.IEnumerator #end
 {
 	@:property public var Current(get,never):Dynamic;
 	private var eip:Int = 0;

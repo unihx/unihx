@@ -6,68 +6,6 @@ import unihx.inspector.*;
 using StringTools;
 import sys.FileSystem.*;
 
-@:meta(UnityEditor.CustomEditor(typeof(UnityEngine.Object)))
-@:nativeGen
-@:native('ExamplePreview')
-class ExamplePreview extends Editor
-{
-	private var prop:HxmlProps;
-	private var scroll:Vector2;
-
-	private function OnEnable()
-	{
-		Repaint();
-	}
-
-	@:overload override public function OnInspectorGUI()
-	{
-		var path = AssetDatabase.GetAssetPath(target);
-		switch (path.split('.').pop())
-		{
-			case 'hxml' if (path == 'Assets/build.hxml'):
-				if (this.prop == null)
-				{
-					this.prop = HxmlProps.get();
-					// this.prop.reload();
-				}
-				GUI.enabled = true;
-				// scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
-				prop.OnGUI();
-				// GUILayout.EndScrollView();
-
-				GUILayout.Space(5);
-				var buttonLayout = new cs.NativeArray(1);
-				buttonLayout[0] = GUILayout.MinHeight(33);
-				if (GUILayout.Button("Save",buttonLayout))
-				{
-					prop.save();
-				}
-				GUILayout.Space(5);
-				if (GUILayout.Button("Reload",buttonLayout))
-				{
-					prop.reload();
-				}
-				GUILayout.Space(5);
-				if (GUILayout.Button("Force Recompilation",buttonLayout))
-				{
-					// prop.compile(['--cwd','./Assets','params.hxml','--macro','unihx.internal.Compiler.compile()']);
-					unityeditor.AssetDatabase.Refresh();
-				}
-				Repaint();
-
-			case 'hx' | 'hxml':
-				GUI.enabled = true;
-				scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
-				GUI.enabled = false;
-				GUILayout.Label(sys.io.File.getContent( AssetDatabase.GetAssetPath(target) ), null);
-				GUILayout.EndScrollView();
-
-			case _:
-				super.OnInspectorGUI();
-		}
-	}
-}
-
 class HxmlProps implements InspectorBuild
 {
 	private static var _cur:HxmlProps = null;
@@ -82,24 +20,34 @@ class HxmlProps implements InspectorBuild
 	}
 
 	private var file:String;
-	public function new()
+	public function new(file="Assets/build.hxml")
 	{
-		this.file = "Assets/build.hxml";
+		this.file = file;
 	}
 
 	/**
 		Choose how will Haxe classes be compiled
+		@label Compilation
 	**/
 	public var compilation:Comp;
 
 	/**
-		advanced options
+		Advanced options
+		@label Advanced Options
 	**/
 	public var advanced:Fold<{
 		/**
 			Should be verbose?
+			@label Verbose
 		**/
-		public var verbose:Bool;
+		public var verbose:Bool = false;
+
+		/**
+			Compile Haxe root packages into the `haxe.root` package
+			@label No root packages
+		**/
+		public var noRoot:Bool = true;
+
 	}>;
 
 	/**
@@ -117,19 +65,30 @@ class HxmlProps implements InspectorBuild
 	private function getSaveContents()
 	{
 		var b = new StringBuf();
-		if (extraParams == null || extraParams == "")
-			b.add("# Add your own compiler parameters here\n\n");
+		b.add('# options\n');
 		switch(compilation)
 		{
 			case CompilationServer(p):
-				b.add('params.hxml\n#--connect $p\n');
+				b.add('--connect $p\n');
+				b.add('--macro unihx.internal.macrorunner.Compile.compile()\n');
 			case Compile:
-				b.add('params.hxml\n');
+				b.add('--macro unihx.internal.macrorunner.Compile.compile()\n');
 			case DontCompile:
 		}
-		if (advanced != null && advanced.contents.verbose)
-			b.add('#verbose\n');
+		if (advanced != null)
+		{
+			if (advanced.contents.verbose)
+				b.add('#verbose\n');
+			if (advanced.contents.noRoot)
+				b.add('-D no-root\n');
+		}
+		b.add('\n# required\n');
+		b.add('classpaths.hxml\n');
+		b.add('-lib unihx\n');
+		b.add('-cs hx-compiled\n');
+		b.add('-D unity_std_target=Standard Assets\n');
 		b.add('\n');
+		b.add("# Add your own compiler parameters after this line: \n\n");
 		if (extraParams != null)
 			b.add(extraParams);
 		return b.toString();
@@ -155,6 +114,7 @@ class HxmlProps implements InspectorBuild
 				buf = new StringBuf();
 		if (advanced == null) advanced = new Fold(cast {});
 		advanced.contents.verbose = false;
+		advanced.contents.noRoot = false;
 		try
 		{
 			var regex = ~/[ \t]+/g;
@@ -162,21 +122,36 @@ class HxmlProps implements InspectorBuild
 			{
 				var ln = i.readLine().trim();
 				var cmd = regex.split(ln);
-				switch (cmd[0])
+				switch [cmd[0].trim(), cmd[1]]
 				{
-					case '--connect' | '#--connect':
+					case ['--connect',_] | ['#--connect',_]:
 						var portCmd = cmd[1].split(":");
 						var port = if (portCmd.length == 1)
 							Std.parseInt(portCmd[0]);
 						else
 							Std.parseInt(portCmd[1]);
 						comp = CompilationServer(port);
-					case '#verbose':
+					case ['#verbose',_]:
 						advanced.contents.verbose = true;
-					case 'params.hxml':
+					case ['-D','no-root']:
+						advanced.contents.noRoot = true;
+					case ['--macro','unihx.internal.macrorunner.Compile.compile()']:
 						if (comp == DontCompile)
 							comp = Compile;
+
+					case ['',null]:
+					case ['#', _] if (ln == '# Add your own compiler parameters after this line:'):
+					case ['classpaths.hxml',_]
+					   | ['-lib','unihx']
+						 | ['#', 'options']
+						 | ['#','required']
+						 | ['-cs',_]:
+						// do nothing - it will be added every save
+					case ['-D',t] if (t.startsWith('unity_std_target=')):
+						// do nothing - it will be added every save
+
 					default:
+						 trace(ln,cmd[0],cmd[1]);
 						buf.add(ln);
 						buf.add("\n");
 				}
@@ -185,10 +160,6 @@ class HxmlProps implements InspectorBuild
 		catch(e:haxe.io.Eof) {}
 		this.compilation = comp;
 		this.extraParams = buf.toString().trim();
-	}
-
-	private function finalize()
-	{
 	}
 }
 

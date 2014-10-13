@@ -1,12 +1,15 @@
-package unihx.internal;
+package unihx.compiler._internal;
 import haxe.macro.*;
 import sys.FileSystem.*;
 using StringTools;
 
-class Compiler
+class Compile
 {
 	public static function compile():Void
 	{
+		if (Context.defined('display'))
+			return;
+
 		var cwd = normalize(Sys.getCwd());
 		var asm = '../Library/ScriptAssemblies';
 		if (exists(asm))

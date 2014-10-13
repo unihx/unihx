@@ -1,4 +1,4 @@
-package unihx.internal;
+package unihx.compiler;
 import haxe.macro.Expr;
 
 class StructHelper

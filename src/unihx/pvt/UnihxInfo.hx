@@ -1,4 +1,4 @@
-package unihx.internal;
+package unihx.compiler;
 
 class UnihxInfo
 {

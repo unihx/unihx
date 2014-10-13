@@ -1,5 +1,0 @@
-package unihx;
-
-class HaxeCompiler
-{
-}

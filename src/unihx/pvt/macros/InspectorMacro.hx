@@ -1,4 +1,4 @@
-package unihx.inspector;
+package unihx.compiler._internal;
 #if macro
 import haxe.macro.Expr;
 import haxe.macro.Type;
@@ -10,7 +10,7 @@ using StringTools;
 using Lambda;
 #end
 
-class Macro
+class InspectorMacro
 {
 	macro public static function prop(ethis:Expr, efield:Expr)
 	{
@@ -146,97 +146,100 @@ class Macro
 			if (f.name == "_")
 				f.name = "_" + i++;
 
-		if (fields.exists(function (cf) return cf.name == fieldName))
+		if (haxe.macro.Context.defined('cs'))
 		{
-			if (ctorAdded.length == 0 && f2.length == fields.length)
-				return null;
-		} else {
-			switch ComplexType.TAnonymous(addedFields).toType() {
-				case TAnonymous(_.get() => f):
-					var complex = getLocalType().toComplexType();
-					var allfields = [],
-							ethis = if (fieldName == null)
-								macro ( (cast this.target) : $complex);
-							else
-								macro this;
-					var fs = [ for (f in f.fields) f.name => f ];
-					for (cf in addedFields)
-					{
-						var ethis = { expr:EField(ethis, cf.name), pos:pos };
-						var expr = exprFromType(ethis, fs[cf.name]);
-						if (expr == null)
-							continue;
-
-						changePos(expr,cf.pos);
-						allfields.push(expr);
-					}
-					var block = { expr:EBlock(allfields), pos:pos };
-					var td = macro class extends unityeditor.Editor { @:overload public function OnGUI() $block; };
-
-					if (fieldName == null)
-					{
-						var cl = getLocalClass().get();
-						allfields.push(macro unityeditor.EditorUtility.SetDirty(this.target));
-						// trace(block.toString());
-						switch macro @:meta(UnityEditor.CustomEditor(typeof($i{cl.name}))) "" {
-							case { expr:EMeta(m,_) }:
-								td.meta = [m];
-							case _: throw "assert";
-						}
-
-						if (cl.meta.has(':editMulti'))
+			if (fields.exists(function (cf) return cf.name == fieldName))
+			{
+				if (ctorAdded.length == 0 && f2.length == fields.length)
+					return null;
+			} else {
+				switch ComplexType.TAnonymous(addedFields).toType() {
+					case TAnonymous(_.get() => f):
+						var complex = getLocalType().toComplexType();
+						var allfields = [],
+								ethis = if (fieldName == null)
+									macro ( (cast this.target) : $complex);
+								else
+									macro this;
+						var fs = [ for (f in f.fields) f.name => f ];
+						for (cf in addedFields)
 						{
-							switch macro @:meta(UnityEditor.CanEditMultipleObjects) "" {
+							var ethis = { expr:EField(ethis, cf.name), pos:pos };
+							var expr = exprFromType(ethis, fs[cf.name]);
+							if (expr == null)
+								continue;
+
+							changePos(expr,cf.pos);
+							allfields.push(expr);
+						}
+						var block = { expr:EBlock(allfields), pos:pos };
+						var td = macro class extends unityeditor.Editor { @:overload public function OnGUI() $block; };
+
+						if (fieldName == null)
+						{
+							var cl = getLocalClass().get();
+							allfields.push(macro unityeditor.EditorUtility.SetDirty(this.target));
+							// trace(block.toString());
+							switch macro @:meta(UnityEditor.CustomEditor(typeof($i{cl.name}))) "" {
 								case { expr:EMeta(m,_) }:
-									td.meta.push(m);
+									td.meta = [m];
 								case _: throw "assert";
 							}
-						}
 
-						//define type
-						td.name = cl.name + '_Helper__';
-						td.pack = cl.pack.copy();
-						td.pack.push('editor');
-						td.fields[0].access.push(AOverride);
-						td.fields[0].name = "OnInspectorGUI";
-            f2 = f2.filter(function(f) {
-              if (f.meta.exists(function(m) return m.name == ":editor"))
-              {
-                switch (f.kind) {
-                  case FFun(fun) if (fun.expr != null):
-                    function map(e:Expr)
-                    {
-                      switch(e.expr)
-                      {
-                        case EConst(CIdent("this")):
-                          return ethis;
-                        case EConst(CIdent(id)):
-                          return try getTypedExpr( typeExpr(e) ) catch(exc:Dynamic) e;
-                        case _:
-                          return e.map(map);
-                      }
-                    }
-                    fun.expr = map(fun.expr);
-                  case _:
-                }
-                td.fields.push(f);
-                return false;
-              } else {
-                return true;
-              }
-            });
-						if (cl.pack.length != 0)
-						{
-							cl.meta.add(':native', [macro $v{cl.name}], cl.pos);
+							if (cl.meta.has(':editMulti'))
+							{
+								switch macro @:meta(UnityEditor.CanEditMultipleObjects) "" {
+									case { expr:EMeta(m,_) }:
+										td.meta.push(m);
+									case _: throw "assert";
+								}
+							}
+
+							//define type
+							td.name = cl.name + '_Helper__';
+							td.pack = cl.pack.copy();
+							td.pack.push('editor');
+							td.fields[0].access.push(AOverride);
+							td.fields[0].name = "OnInspectorGUI";
+							f2 = f2.filter(function(f) {
+								if (f.meta.exists(function(m) return m.name == ":editor"))
+								{
+									switch (f.kind) {
+										case FFun(fun) if (fun.expr != null):
+											function map(e:Expr)
+											{
+												switch(e.expr)
+												{
+													case EConst(CIdent("this")):
+														return ethis;
+													case EConst(CIdent(id)):
+														return try getTypedExpr( typeExpr(e) ) catch(exc:Dynamic) e;
+													case _:
+														return e.map(map);
+												}
+											}
+											fun.expr = map(fun.expr);
+										case _:
+									}
+									td.fields.push(f);
+									return false;
+								} else {
+									return true;
+								}
+							});
+							if (cl.pack.length != 0)
+							{
+								cl.meta.add(':native', [macro $v{cl.name}], cl.pos);
+							}
+							try {
+								defineType(td);
+							} catch(e:Dynamic) { trace(e); }
+						} else {
+							td.fields[0].name = fieldName;
+							f2.push(td.fields[0]);
 						}
-						try {
-							defineType(td);
-						} catch(e:Dynamic) { trace(e); }
-					} else {
-						td.fields[0].name = fieldName;
-						f2.push(td.fields[0]);
-					}
-				case _: throw "assert";
+					case _: throw "assert";
+				}
 			}
 		}
 

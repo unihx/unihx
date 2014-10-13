@@ -1,11 +1,11 @@
 package unihx.inspector;
 
-typedef Fold<T> = FoldData;
+typedef Fold<T> = FoldData<T>;
 
-@:nativeGen @:struct private class FoldData
+@:nativeGen @:struct private class FoldData<T>
 {
 	public var folded:Bool = false;
-	public var contents:Dynamic;
+	public var contents:T;
 
 	public function new(contents)
 	{
