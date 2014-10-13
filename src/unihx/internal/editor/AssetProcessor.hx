@@ -1,4 +1,4 @@
-package unihx._internal.editor;
+package unihx.internal.editor;
 import haxe.ds.Vector;
 import sys.FileSystem.*;
 import haxe.io.Path;
@@ -62,8 +62,8 @@ using StringTools;
 		if (sources.length > 0)
 		{
 			refresh = true;
-			var comp = HaxeProperties.props();
-			var success = comp.compile(['--cwd','./Assets','build.hxml','--macro','unihx._internal.Compiler.compile()']);
+			// var comp = HaxeProperties.props();
+			// var success = comp.compile(['--cwd','./Assets','build.hxml','--macro','unihx.internal.Compiler.compile()']);
 		}
 		if (refresh)
 		{

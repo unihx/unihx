@@ -1,5 +1,4 @@
-package unihx._internal.editor;
-import unihx._internal.editor.HaxeProperties;
+package unihx.internal.editor;
 import sys.io.Process;
 import unityengine.*;
 import Std.*;
@@ -8,18 +7,10 @@ using StringTools;
 
 class HaxeCompiler
 {
-	public var props(default,null):Comp;
 	var process:Process;
 
-	public function new(prop:Comp)
+	public function new()
 	{
-		this.props = prop;
-		switch(prop)
-		{
-			case CompilationServer(port):
-				newProcess(port);
-			case _:
-		}
 	}
 
 	function newProcess(port:Int)
@@ -39,21 +30,7 @@ class HaxeCompiler
 
 	public function compile(args:Array<String>, verbose=false):Bool
 	{
-		var cmd = switch(props)
-		{
-			case DontCompile:
-				return true;
-			case Compile:
-				trace('compile',args);
-				new Process("haxe",args);
-			case CompilationServer(port):
-				if (process == null || ( untyped process.native : cs.system.diagnostics.Process ).HasExited )
-					newProcess(port);
-				args = args.copy();
-				args.push('--connect'); args.push(port+"");
-				trace('compile',args);
-				new Process('haxe',args);
-		}
+		var cmd = new Process('haxe',args);
 
 		var ret = true;
 		if (cmd != null)

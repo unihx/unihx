@@ -1,4 +1,4 @@
-package unihx._internal;
+package unihx.internal;
 import haxe.macro.*;
 import sys.FileSystem.*;
 using StringTools;
@@ -27,7 +27,7 @@ class Compiler
 				collect(paths,i);
 			}
 		}
-		haxe.macro.Compiler.include('unihx._internal.editor');
+		haxe.macro.Compiler.include('unihx.internal.editor');
 	}
 
 	private static function normalize(path:String)

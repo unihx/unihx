@@ -175,7 +175,7 @@ class InitCmd extends Cli
 			sys.io.File.saveContent(assets + '/params.hxml', 'classpaths.hxml\n-lib unihx\n-cs hx-compiled\n-D unity_std_target=Standard Assets');
 			var old = Sys.getCwd();
 			Sys.setCwd(assets);
-			haxe(['params.hxml',"--macro","include(\"unihx._internal.editor\")"]);
+			haxe(['params.hxml',"--macro","include(\"unihx.internal.editor\")"]);
 			Sys.setCwd(old);
 		}
 

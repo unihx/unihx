@@ -1,4 +1,4 @@
-package unihx.editor;
+package unihx.internal.editor;
 import unityengine.*;
 import unityeditor.*;
 import haxe.ds.Vector;
@@ -24,11 +24,11 @@ class ExamplePreview extends Editor
 		var path = AssetDatabase.GetAssetPath(target);
 		switch (path.split('.').pop())
 		{
-			case 'hxml' if (path.endsWith('build.hxml')):
+			case 'hxml' if (path == 'Assets/build.hxml'):
 				if (this.prop == null)
 				{
-					this.prop = new HxmlProps(path);
-					this.prop.reload();
+					this.prop = HxmlProps.get();
+					// this.prop.reload();
 				}
 				GUI.enabled = true;
 				// scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
@@ -50,7 +50,7 @@ class ExamplePreview extends Editor
 				GUILayout.Space(5);
 				if (GUILayout.Button("Force Recompilation",buttonLayout))
 				{
-					// prop.compile(['--cwd','./Assets','params.hxml','--macro','unihx._internal.Compiler.compile()']);
+					// prop.compile(['--cwd','./Assets','params.hxml','--macro','unihx.internal.Compiler.compile()']);
 					unityeditor.AssetDatabase.Refresh();
 				}
 				Repaint();
@@ -70,10 +70,21 @@ class ExamplePreview extends Editor
 
 class HxmlProps implements InspectorBuild
 {
-	private var file:String;
-	public function new(file:String)
+	private static var _cur:HxmlProps = null;
+	public static function get()
 	{
-		this.file = file;
+		if (_cur == null)
+		{
+			_cur = new HxmlProps();
+			_cur.reload();
+		}
+		return _cur;
+	}
+
+	private var file:String;
+	public function new()
+	{
+		this.file = "Assets/build.hxml";
 	}
 
 	/**
@@ -81,7 +92,15 @@ class HxmlProps implements InspectorBuild
 	**/
 	public var compilation:Comp;
 
-	public var verbose:Bool;
+	/**
+		advanced options
+	**/
+	public var advanced:Fold<{
+		/**
+			Should be verbose?
+		**/
+		public var verbose:Bool;
+	}>;
 
 	/**
 		Extra Haxe parameters from build.hxml
@@ -108,7 +127,7 @@ class HxmlProps implements InspectorBuild
 				b.add('params.hxml\n');
 			case DontCompile:
 		}
-		if (verbose)
+		if (advanced != null && advanced.verbose)
 			b.add('#verbose\n');
 		b.add('\n');
 		if (extraParams != null)
@@ -134,7 +153,8 @@ class HxmlProps implements InspectorBuild
 	{
 		var comp = DontCompile,
 				buf = new StringBuf();
-		verbose = false;
+		if (advanced == null) advanced = cast {};
+		advanced.verbose = false;
 		try
 		{
 			var regex = ~/[ \t]+/g;
@@ -152,7 +172,7 @@ class HxmlProps implements InspectorBuild
 							Std.parseInt(portCmd[1]);
 						comp = CompilationServer(port);
 					case '#verbose':
-						verbose = true;
+						advanced.verbose = true;
 					case 'params.hxml':
 						if (comp == DontCompile)
 							comp = Compile;
@@ -167,10 +187,9 @@ class HxmlProps implements InspectorBuild
 		this.extraParams = buf.toString().trim();
 	}
 
-	function new()
+	private function finalize()
 	{
 	}
-
 }
 
 enum Comp

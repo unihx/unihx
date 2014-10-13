@@ -1,6 +1,6 @@
 package unihx.tests.cases;
 import unihx.tests.*;
-import unihx._internal.YieldBase;
+import unihx.internal.YieldBase;
 
 using Lambda;
 
@@ -15,10 +15,10 @@ class YieldTests
 
 	private var someTest:String;
 
-	macro private static function test(expr:haxe.macro.Expr):haxe.macro.Expr.ExprOf<unihx._internal.YieldBase>
+	macro private static function test(expr:haxe.macro.Expr):haxe.macro.Expr.ExprOf<unihx.internal.YieldBase>
 	{
-		var ret = unihx._internal.YieldGenerator.make('unihx.tests',expr);
-		return macro ($ret : unihx._internal.YieldBase);
+		var ret = unihx.internal.YieldGenerator.make('unihx.tests',expr);
+		return macro ($ret : unihx.internal.YieldBase);
 	}
 
 	macro private static function fails(e:haxe.macro.Expr)

@@ -1,4 +1,4 @@
-package unihx._internal;
+package unihx.internal;
 
 class Yield
 {

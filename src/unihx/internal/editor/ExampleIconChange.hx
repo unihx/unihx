@@ -1,4 +1,4 @@
-package unihx._internal.editor;
+package unihx.internal.editor;
 import unityengine.*;
 import unityeditor.*;
 using StringTools;

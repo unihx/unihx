@@ -22,6 +22,6 @@ private typedef Data =
 
 	macro public function with(ethis:haxe.macro.Expr, obj:haxe.macro.Expr):haxe.macro.Expr
 	{
-		return unihx._internal.StructHelper.with(['center','size'], macro : unityengine.Bounds, ethis, obj);
+		return unihx.internal.StructHelper.with(['center','size'], macro : unityengine.Bounds, ethis, obj);
 	}
 }
