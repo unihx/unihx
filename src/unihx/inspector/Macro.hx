@@ -405,17 +405,12 @@ class Macro
 			case 'Fold' if (inspector && params.length == 1):
 				var all = exprFromType(macro $ethis.contents, field, params[0]);
 				return macro {
-					// unityeditor.EditorGUILayout.BeginVertical(null);
 					if ($ethis.folded = unityeditor.EditorGUILayout.Foldout($ethis.folded, $guiContent))
 					{
 						unityeditor.EditorGUI.indentLevel++;
-						// unityeditor.EditorGUILayout.BeginHorizontal(null);
-						// unityeditor.EditorGUILayout.Space();
 						$all;
 						unityeditor.EditorGUI.indentLevel--;
-						// unityeditor.EditorGUILayout.EndHorizontal();
 					}
-					// unityeditor.EditorGUILayout.EndVertical();
 				};
 
 			case 'Slider' if (inspector):
