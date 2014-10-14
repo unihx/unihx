@@ -166,7 +166,8 @@ class InitCmd extends Cli
 		}
 
 		var hxml = new unihx.pvt.HxmlProps('$assets/build.hxml');
-		hxml.reload();
+		if (exists('$assets/build.hxml'))
+			hxml.reload();
 		hxml.save();
 
 		if (exists(assets + '/params.hxml'))
