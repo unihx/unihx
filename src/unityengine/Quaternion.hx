@@ -37,7 +37,7 @@ package unityengine;
 
 	macro public function with(ethis:haxe.macro.Expr, obj:haxe.macro.Expr):haxe.macro.Expr
 	{
-		return unihx.internal.StructHelper.with(['x','y','z','w'], macro : unityengine.Quaternion, ethis, obj);
+		return unihx.compiler.StructHelper.with(['x','y','z','w'], macro : unityengine.Quaternion, ethis, obj);
 	}
 }
 

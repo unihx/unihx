@@ -62,7 +62,7 @@ package unityengine;
 
 	macro public function with(ethis:haxe.macro.Expr, obj:haxe.macro.Expr):haxe.macro.Expr
 	{
-		return unihx.internal.StructHelper.with(['x','y'], macro : unityengine.Vector2, ethis, obj);
+		return unihx.compiler.StructHelper.with(['x','y'], macro : unityengine.Vector2, ethis, obj);
 	}
 
 	public static var kEpsilon(get,never) : Single;

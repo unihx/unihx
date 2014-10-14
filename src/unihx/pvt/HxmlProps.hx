@@ -25,6 +25,8 @@ class HxmlProps implements InspectorBuild
 		this.file = file;
 	}
 
+	public var libraries:Array<String>;
+
 	/**
 		Advanced options
 		@label Advanced Options

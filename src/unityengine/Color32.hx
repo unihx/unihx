@@ -27,7 +27,7 @@ import cs.StdTypes;
 
 	macro public function with(ethis:haxe.macro.Expr, obj:haxe.macro.Expr):haxe.macro.Expr
 	{
-		return unihx.internal.StructHelper.with(['r','g','b','a'], macro : unityengine.Color32, ethis, obj);
+		return unihx.compiler.StructHelper.with(['r','g','b','a'], macro : unityengine.Color32, ethis, obj);
 	}
 }
 

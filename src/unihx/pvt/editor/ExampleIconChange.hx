@@ -106,6 +106,16 @@ using StringTools;
 
 					var tex = (file.endsWith('.hx')) ? 'unihx_logo_$size.png' : 'unihx_config_logo_$size.png';
 					GUI.DrawTexture(rect, cast AssetDatabase.LoadAssetAtPath( 'Assets/Editor Default Resources/unihx/$tex', cs.Lib.toNativeType(Texture2D)));
+
+					// show extension
+					// if (r.height > 20)
+					// {
+					// 	var ext = new GUIContent(file.split('.').pop());
+					// 	var labelStyle = new GUIStyle( EditorStyles.label );
+					// 	var size = labelStyle.CalcSize(ext);
+					// 	var extRect = r.with({ x:r.x + r.width - size.x, width: size.x, height: size.y });
+					// 	GUI.Label(extRect, ext, labelStyle);
+					// }
 			}
 		};
 	}
