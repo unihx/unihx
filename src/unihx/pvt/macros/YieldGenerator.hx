@@ -1,4 +1,4 @@
-package unihx.compiler._internal;
+package unihx.pvt.macros;
 import haxe.macro.Expr;
 import haxe.macro.Context.*;
 import haxe.macro.Context;
@@ -581,7 +581,7 @@ class YieldGenerator
 		var excHandler = getExcHandler();
 		if (excHandler != null)
 			cls.fields.push(excHandler);
-		var pvtAcc = macro : unihx.compiler._internal.PrivateTypeAccess;
+		var pvtAcc = macro : unihx.pvt.macros.PrivateTypeAccess;
 		for (changed in changed)
 		{
 			var t2 = toComplexType(changed.t);
@@ -975,7 +975,7 @@ class YieldGenerator
 	{
 		// we need this function because there are some types that aren't compatible with toComplexType
 		// for example, TMonos and private types
-		// For TMonos, we'll transform them into Dynamic; For private types, we'll use unihx.compiler._internal.PrivateTypeAccess
+		// For TMonos, we'll transform them into Dynamic; For private types, we'll use unihx.pvt.macros.PrivateTypeAccess
 		var params = null;
 		var base:BaseType = switch (t.follow()) {
 			case TInst(c,p):
@@ -997,7 +997,7 @@ class YieldGenerator
 			// use PrivateTypeAccess
 			var t = base.module,
 					name = base.name;
-			var pvtAcc = macro : unihx.compiler._internal.PrivateTypeAccess;
+			var pvtAcc = macro : unihx.pvt.macros.PrivateTypeAccess;
 			switch (pvtAcc) {
 				case TPath(p):
 					p.params = [TPExpr( macro $v{t} ), TPExpr( macro $v{name} )];

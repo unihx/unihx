@@ -1,4 +1,4 @@
-package unihx.compiler._internal;
+package unihx.pvt.macros;
 
-@:genericBuild(unihx.compiler._internal.PrivateAccessMacro.build())
+@:genericBuild(unihx.pvt.macros.PrivateAccessMacro.build())
 class PrivateTypeAccess<Const,Const,Rest> {}

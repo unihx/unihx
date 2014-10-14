@@ -1,4 +1,4 @@
-package unihx.compiler._internal;
+package unihx.pvt.macros;
 import haxe.macro.*;
 import sys.FileSystem.*;
 using StringTools;

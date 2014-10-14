@@ -1,4 +1,4 @@
-package unihx.internal.editor;
+package unihx.pvt;
 import unityengine.*;
 import unityeditor.*;
 import haxe.ds.Vector;
@@ -24,12 +24,6 @@ class HxmlProps implements InspectorBuild
 	{
 		this.file = file;
 	}
-
-	/**
-		Choose how will Haxe classes be compiled
-		@label Compilation
-	**/
-	public var compilation:Comp;
 
 	/**
 		Advanced options
@@ -62,19 +56,12 @@ class HxmlProps implements InspectorBuild
 	**/
 	public var extraParams:TextArea;
 
+	private var warnings:Array<{ msg:String, line:Int }>;
+
 	private function getSaveContents()
 	{
 		var b = new StringBuf();
 		b.add('# options\n');
-		switch(compilation)
-		{
-			case CompilationServer(p):
-				b.add('--connect $p\n');
-				b.add('--macro unihx.internal.macrorunner.Compile.compile()\n');
-			case Compile:
-				b.add('--macro unihx.internal.macrorunner.Compile.compile()\n');
-			case DontCompile:
-		}
 		if (advanced != null)
 		{
 			if (advanced.contents.verbose)
@@ -103,41 +90,50 @@ class HxmlProps implements InspectorBuild
 
 	public function reload()
 	{
-		var i = sys.io.File.read(this.file);
-		reloadFrom(i);
-		i.close();
+		if (sys.FileSystem.exists(this.file))
+		{
+			var i = sys.io.File.read(this.file);
+			reloadFrom(i);
+			i.close();
+		} else {
+			reloadFrom( new haxe.io.StringInput("") );
+		}
+	}
+
+	public function getWarnings()
+	{
+		if (warnings == null)
+			return [];
+		else
+			return warnings.copy();
 	}
 
 	private function reloadFrom(i:haxe.io.Input)
 	{
-		var comp = DontCompile,
-				buf = new StringBuf();
+		this.warnings = [];
+		var buf = new StringBuf();
 		if (advanced == null) advanced = new Fold(cast {});
 		advanced.contents.verbose = false;
 		advanced.contents.noRoot = false;
+		var lineNum = 0;
 		try
 		{
 			var regex = ~/[ \t]+/g;
 			while(true)
 			{
+				lineNum++;
 				var ln = i.readLine().trim();
 				var cmd = regex.split(ln);
 				switch [cmd[0].trim(), cmd[1]]
 				{
-					case ['--connect',_] | ['#--connect',_]:
-						var portCmd = cmd[1].split(":");
-						var port = if (portCmd.length == 1)
-							Std.parseInt(portCmd[0]);
-						else
-							Std.parseInt(portCmd[1]);
-						comp = CompilationServer(port);
 					case ['#verbose',_]:
 						advanced.contents.verbose = true;
 					case ['-D','no-root']:
 						advanced.contents.noRoot = true;
-					case ['--macro','unihx.internal.macrorunner.Compile.compile()']:
-						if (comp == DontCompile)
-							comp = Compile;
+					case ['params.hxml',_]:
+						warnings.push({
+							msg: 'It seems that you were running an older version of unihx already. `params.hxml` is now deprecated and can be delted',
+							line:lineNum });
 
 					case ['',null]:
 					case ['#', _] if (ln == '# Add your own compiler parameters after this line:'):
@@ -151,30 +147,12 @@ class HxmlProps implements InspectorBuild
 						// do nothing - it will be added every save
 
 					default:
-						 trace(ln,cmd[0],cmd[1]);
 						buf.add(ln);
 						buf.add("\n");
 				}
 			}
 		}
 		catch(e:haxe.io.Eof) {}
-		this.compilation = comp;
 		this.extraParams = buf.toString().trim();
 	}
-}
-
-enum Comp
-{
-	/**
-		@label Don't compile
-	**/
-	DontCompile;
-	/**
-		@label Use standard Haxe compiler
-	**/
-	Compile;
-	/**
-		@label Use compilation server
-	**/
-	CompilationServer(port:Int);
 }

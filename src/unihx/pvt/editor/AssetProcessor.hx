@@ -1,4 +1,4 @@
-package unihx.internal.editor;
+package unihx.pvt.editor;
 import haxe.ds.Vector;
 import sys.FileSystem.*;
 import haxe.io.Path;
@@ -63,7 +63,7 @@ using StringTools;
 		{
 			refresh = true;
 			// var comp = HaxeProperties.props();
-			// var success = comp.compile(['--cwd','./Assets','build.hxml','--macro','unihx.internal.Compiler.compile()']);
+			// var success = comp.compile(['--cwd','./Assets','build.hxml','--macro','unihx.pvt.Compiler.compile()']);
 		}
 		if (refresh)
 		{

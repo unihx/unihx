@@ -1,4 +1,4 @@
-package unihx.compiler._internal;
+package unihx.pvt.macros;
 #if macro
 import haxe.macro.Expr;
 import haxe.macro.Type;

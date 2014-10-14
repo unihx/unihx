@@ -1,4 +1,4 @@
-package unihx.internal.editor;
+package unihx.pvt.editor;
 import unityengine.*;
 import unityeditor.*;
 import haxe.ds.Vector;
@@ -49,7 +49,7 @@ class ExamplePreview extends Editor
 				GUILayout.Space(3);
 				if (GUILayout.Button("Force Recompilation",buttonLayout))
 				{
-					// prop.compile(['--cwd','./Assets','params.hxml','--macro','unihx.internal.Compiler.compile()']);
+					// prop.compile(['--cwd','./Assets','params.hxml','--macro','unihx.pvt.Compiler.compile()']);
 					unityeditor.AssetDatabase.Refresh();
 				}
 				Repaint();

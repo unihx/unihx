@@ -1,4 +1,4 @@
-package unihx.internal.editor;
+package unihx.pvt.editor;
 import unityengine.*;
 import unityeditor.*;
 import haxe.ds.Vector;

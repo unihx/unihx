@@ -39,7 +39,7 @@
     <hidden path="obj" />
   </hiddenPaths>
   <!-- Executed before build -->
-  <preBuildCommand>haxe --cwd "$(ProjectDir)/Assets" classpaths.hxml params.hxml --macro unihx._internal.Compiler.compile\(\)</preBuildCommand>
+  <preBuildCommand>haxe --cwd "$(ProjectDir)/Assets" build.hxml --macro unihx.pvt.macros.Compile.compile\(\)</preBuildCommand>
   <!-- Executed after build -->
   <postBuildCommand alwaysRun="False" />
   <!-- Other project options -->

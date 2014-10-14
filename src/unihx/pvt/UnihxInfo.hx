@@ -1,4 +1,4 @@
-package unihx.compiler;
+package unihx.pvt;
 
 class UnihxInfo
 {

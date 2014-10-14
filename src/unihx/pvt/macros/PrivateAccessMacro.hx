@@ -1,4 +1,4 @@
-package unihx.compiler._internal;
+package unihx.pvt.macros;
 import haxe.macro.Expr;
 import haxe.macro.Context.*;
 import haxe.macro.Context;

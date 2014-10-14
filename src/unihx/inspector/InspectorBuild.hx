@@ -1,7 +1,9 @@
 package unihx.inspector;
 
-@:autoBuild(unihx.compiler._internal.InspectorMacro.build("OnGUI"))
+@:autoBuild(unihx.pvt.macros.InspectorMacro.build("OnGUI"))
 interface InspectorBuild
 {
+#if cs
 	function OnGUI():Void;
+#end
 }

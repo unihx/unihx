@@ -1,4 +1,4 @@
-package unihx.internal.editor;
+package unihx.pvt.editor;
 import sys.io.Process;
 import unityengine.*;
 import Std.*;
