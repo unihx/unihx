@@ -1,6 +1,7 @@
 package unihx.pvt.editor;
 import unityengine.*;
 import unityeditor.*;
+import sys.FileSystem.*;
 using StringTools;
 
 @:meta(UnityEditor.InitializeOnLoad)
@@ -8,6 +9,19 @@ using StringTools;
 {
 	static function __init__()
 	{
+		var dir = 'Assets/Editor Default Resources/unihx';
+		if (exists(dir))
+		{
+			for (file in readDirectory(dir)) if (file.endsWith('.png'))
+			{
+				var importer:TextureImporter = cast AssetImporter.GetAtPath('$dir/$file');
+				importer.textureFormat = TextureImporterFormat.ARGB32;
+				importer.alphaIsTransparency = true;
+				importer.mipmapEnabled = true;
+				importer.filterMode = FilterMode.Trilinear;
+				AssetDatabase.ImportAsset('$dir/$file');
+			}
+		}
 		unityeditor.EditorApplication.hierarchyWindowItemOnGUI += function(instanceId:Int, r:Rect) {
 			var obj = DragAndDrop.objectReferences;
 			if (obj == null || obj.Length == 0 || !r.Contains(Event.current.mousePosition))

@@ -30,7 +30,7 @@ class Compile
 				collect(paths,i);
 			}
 		}
-		haxe.macro.Compiler.include('unihx.internal.editor');
+		haxe.macro.Compiler.include('unihx.pvt.editor');
 	}
 
 	private static function normalize(path:String)
