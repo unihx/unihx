@@ -28,13 +28,11 @@ class HxmlProps implements InspectorBuild
 	public var libraries:Array<String>;
 
 	/**
-		Advanced options
 		@label Advanced Options
 	**/
 	public var advanced:Fold<{
 		/**
 			Should be verbose?
-			@label Verbose
 		**/
 		public var verbose:Bool = false;
 
@@ -66,9 +64,9 @@ class HxmlProps implements InspectorBuild
 		b.add('# options\n');
 		if (advanced != null)
 		{
-			if (advanced.contents.verbose)
+			if (advanced.verbose)
 				b.add('#verbose\n');
-			if (advanced.contents.noRoot)
+			if (advanced.noRoot)
 				b.add('-D no-root\n');
 		}
 		b.add('\n# required\n');
@@ -114,9 +112,9 @@ class HxmlProps implements InspectorBuild
 	{
 		this.warnings = [];
 		var buf = new StringBuf();
-		if (advanced == null) advanced = new Fold(cast {});
-		advanced.contents.verbose = false;
-		advanced.contents.noRoot = false;
+		if (advanced == null) advanced = cast {};
+		advanced.verbose = false;
+		advanced.noRoot = false;
 		var lineNum = 0;
 		try
 		{
@@ -129,9 +127,9 @@ class HxmlProps implements InspectorBuild
 				switch [cmd[0].trim(), cmd[1]]
 				{
 					case ['#verbose',_]:
-						advanced.contents.verbose = true;
+						advanced.verbose = true;
 					case ['-D','no-root']:
-						advanced.contents.noRoot = true;
+						advanced.noRoot = true;
 					case ['params.hxml',_]:
 						warnings.push({
 							msg: 'It seems that you were running an older version of unihx already. `params.hxml` is now deprecated and can be delted',
