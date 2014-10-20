@@ -202,7 +202,7 @@ class InitCmd extends Cli
 		}
 
 		createDirectory(assets + '/Editor Default Resources/unihx');
-		var unihx = this.getUnihxPath() + "/extra/assets";
+		var unihx = this.getUnihxPath() + "/extra/assets/icons";
 		for (file in readDirectory(unihx))
 		{
 			if (file.endsWith('.png'))
