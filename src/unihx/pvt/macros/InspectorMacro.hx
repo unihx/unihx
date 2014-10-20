@@ -162,6 +162,8 @@ class InspectorMacro
 			if (f.name == "_")
 				f.name = "_" + i++;
 
+		var ic = new InspectorCall();
+		ic.getOrdersFrom(ComplexType.TAnonymous(toRun));
 		if (defined('cs')) switch (ComplexType.TAnonymous(toRun).toType())
 		{
 			case TAnonymous(f):
@@ -172,7 +174,7 @@ class InspectorMacro
 				for (fold in toRun)
 				{
 					var f = tfields[fold.name];
-					exprs.push(inspectorCall(ethis,f,fields));
+					exprs.push(ic.run(ethis,f,fields));
 				}
 				var expr = { expr:EBlock(exprs), pos: currentPos() };
 				var field = (macro class { @:overload public function OnGUI() $expr; }).fields[0];
@@ -455,9 +457,52 @@ class InspectorCall
 	var guiContent:Expr;
 	var opts:Expr;
 
+	var fieldsOrder:Map<String,Array<String>>;
+
 	public function new()
 	{
 		this.block = [];
+		fieldsOrder = new Map();
+	}
+
+	public function getOrdersFrom(ct:ComplexType)
+	{
+		switch (ct)
+		{
+			case TPath(p):
+				if (p.params != null) for (p in p.params)
+				{
+					switch (p)
+					{
+						case TPType(c):
+							getOrdersFrom(c);
+						case _:
+					}
+				}
+			case TFunction(args,ret):
+				for(arg in args) getOrdersFrom(arg);getOrdersFrom(ret);
+			case TAnonymous(fields) | TExtend(_,fields):
+				for (f in fields)
+				{
+					switch(f.kind)
+					{
+						case FVar(t,_):
+							if (t != null)
+								getOrdersFrom(t);
+						case FProp(get,set,t,_):
+							if (t != null)
+								getOrdersFrom(t);
+						case _:
+					}
+				}
+				var rfields = [ for (f in fields) f.name ];
+				var name = { var tmp = rfields.copy(); tmp.sort(Reflect.compare); tmp.join('$'); };
+				fieldsOrder[name] = rfields;
+			case TParent(t):
+				getOrdersFrom(t);
+			case TOptional(t):
+				getOrdersFrom(t);
+		}
 	}
 
 	public function run(ethis:Expr, field:ClassField, buildFields:Array<Field>):Expr
@@ -468,9 +513,9 @@ class InspectorCall
 		this.buildFields = buildFields;
 		handleType(field.type);
 		var b = block;
-		block = null;
+		block = [];
 		var ret = { expr:EBlock(b), pos:field.pos };
-		trace(ret.toString());
+		// trace(ret.toString());
 		return ret;
 	}
 
@@ -485,13 +530,15 @@ class InspectorCall
 			this.field = field;
 		var lblock = block;
 		this.block = [];
+
 		handleType(type);
+
 		var ret = { expr:EBlock(block), pos: field.pos };
 		this.block = lblock;
 		this.ethis = lethis;
 		this.efield = lefield;
 		this.field = lfield;
-		trace(ret.toString());
+		// trace(ret.toString());
 		return ret;
 	}
 
@@ -512,8 +559,16 @@ class InspectorCall
 						lastEField = efield,
 						lastField = field;
 				ethis = { expr: EField(lastEThis, field.name), pos:lastEThis.pos };
-				for (f in fields)
+				var fnames = [ for (f in fields) f.name ];
+				fnames.sort(Reflect.compare);
+				var name = fnames.join("$");
+				var fnamesOrder = this.fieldsOrder[name];
+				if (fnamesOrder != null)
+					fnames = fnamesOrder;
+				var fields = [ for (f in fields) f.name => f ];
+				for (fname in fnames)
 				{
+					var f = fields[fname];
 					efield = { expr: EField(ethis, f.name), pos:ethis.pos };
 					field = f;
 					handleType(f.type);
@@ -575,9 +630,7 @@ class InspectorCall
 						for (i in 0...len)
 						{
 							var label = 'Element ' + i;
-							unityeditor.EditorGUI.indentLevel++;
 							$element;
-							unityeditor.EditorGUI.indentLevel--;
 						}
 						unityeditor.EditorGUI.indentLevel--;
 					}
@@ -710,15 +763,25 @@ class InspectorCall
 		return macro $tname.editorHelper($ethis, $label, $opts);
 	}
 
+	static var helpers:Map<String,Bool> = new Map();
+	static function __init__()
+	{
+		haxe.macro.Context.onMacroContextReused(function() {
+			helpers = new Map();
+			return true;
+		});
+	}
+
 	private static function ensureEnumHelper(e:EnumType, type:Type, pos:Position):Expr
 	{
 		if (e.params.length > 0)
 			throw new Error("Enum with type parameters is currently unsupported",pos);
 		var tname = e.pack.join('.') + (e.pack.length == 0 ? "" : ".") + e.name;
 
-		var t = try getType(tname + "_Helper__") catch(e:Dynamic) null;
-		if (t == null)
+		// var t = getType(tname + "_Helper__");
+		if (!helpers.exists(tname))
 		{
+			helpers[tname] = true;
 			var td = macro class { };
 			switch macro @:build(unihx.pvt.macros.InspectorMacro.buildEnumHelper($v{e.module}, $v{e.name})) "" {
 				case { expr: EMeta(m,_) }:
@@ -926,7 +989,7 @@ class InspectorCall
 				buf.addChar(chr);
 				first = true;
 			} else {
-				if (first)
+				if (i == 0)
 					buf.addChar( chr - ('a'.code - 'A'.code) );
 				else
 					buf.addChar(chr);

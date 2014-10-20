@@ -14,6 +14,7 @@ using StringTools;
 		{
 			for (file in readDirectory(dir)) if (file.endsWith('.png'))
 			{
+
 				var importer:TextureImporter = cast AssetImporter.GetAtPath('$dir/$file');
 				importer.textureFormat = TextureImporterFormat.ARGB32;
 				importer.alphaIsTransparency = true;
