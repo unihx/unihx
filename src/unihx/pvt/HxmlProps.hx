@@ -43,6 +43,17 @@ class HxmlProps implements InspectorBuild
 		public var noRoot:Bool = true;
 
 		/**
+			Detect and delete generated files that are no longer used
+		**/
+		public var deleteUnused:Bool = true;
+
+		/**
+			Make the generated code more version-control friendly
+			@label Version-Control Friendly
+		**/
+		public var vcsFriendly:Bool = true;
+
+		/**
 			Determines how error positions are reported
 		**/
 		public var errorPositions:ErrorPositions = RelativePathsOnly;
@@ -77,6 +88,30 @@ class HxmlProps implements InspectorBuild
 				b.add('#verbose\n');
 			if (advanced.noRoot)
 				b.add('-D no-root\n');
+			if (!advanced.deleteUnused)
+				b.add('#dont-delete-unused\n');
+			if (!advanced.vcsFriendly)
+				b.add('#');
+			b.add('-D independent-fieldlookup\n');
+
+			switch (advanced.deadCodeElimination)
+			{
+				case DNo:
+					b.add('-dce no\n');
+				case DStd:
+				case DFull:
+					b.add('-dce full\n');
+			}
+
+			switch (advanced.errorPositions)
+			{
+				case HaxePositions:
+					b.add('#haxe-positions\n');
+				case GeneratedPositions:
+					b.add('-D real-position\n');
+				case RelativePathsOnly:
+					b.add('-D cs-force-relative-pos\n');
+			}
 		}
 		for (lib in libraries)
 		{
@@ -121,7 +156,7 @@ class HxmlProps implements InspectorBuild
 		if (warnings == null)
 			return [];
 		else
-			return warnings.copy();
+			return warnings;
 	}
 
 	private function reloadFrom(i:haxe.io.Input)
@@ -131,6 +166,10 @@ class HxmlProps implements InspectorBuild
 		if (advanced == null) advanced = cast {};
 		advanced.verbose = false;
 		advanced.noRoot = false;
+		advanced.deadCodeElimination = DStd;
+		advanced.errorPositions = RelativePathsOnly;
+		advanced.deleteUnused = true;
+		advanced.vcsFriendly = true;
 		libraries = [];
 		var lineNum = 0;
 		try
@@ -149,9 +188,30 @@ class HxmlProps implements InspectorBuild
 						advanced.verbose = true;
 					case ['-D','no-root']:
 						advanced.noRoot = true;
+					case ['#dont-delete-unused',_]:
+						advanced.deleteUnused = false;
+					case ['#-D', 'independent-fieldlookup']:
+						advanced.vcsFriendly = false;
+					case ['-D', 'independent-fieldlookup']:
+						advanced.vcsFriendly = true;
+
+					case ['-dce', 'no']:
+						advanced.deadCodeElimination = DNo;
+					case ['-dce', 'std']:
+						advanced.deadCodeElimination = DStd;
+					case ['-dce', 'full']:
+						advanced.deadCodeElimination = DFull;
+
+					case ['-D', 'real-position']:
+						advanced.errorPositions = GeneratedPositions;
+					case ['#haxe-positions',_]:
+						advanced.errorPositions = HaxePositions;
+					case ['-D', 'cs-force-relative-pos']:
+						advanced.errorPositions = RelativePathsOnly;
+
 					case ['params.hxml',_]:
 						warnings.push({
-							msg: 'It seems that you were running an older version of unihx already. `params.hxml` is now deprecated and can be deleted',
+							msg: 'It seems that you were running an older version of unihx. `params.hxml` is now deprecated and can be deleted',
 							line:lineNum });
 
 					case ['',null]:
@@ -175,6 +235,13 @@ class HxmlProps implements InspectorBuild
 			}
 		}
 		catch(e:haxe.io.Eof) {}
+		if (advanced.vcsFriendly && advanced.errorPositions == HaxePositions)
+		{
+			warnings.push({
+				msg: 'You\'ve selected version control friendly, but error positions is set to "Haxe Positions". This option will not generate VC-friendly files. See the advanced tab to change this.',
+				line: -1
+			});
+		}
 		this.extraParams = buf.toString().trim();
 	}
 }

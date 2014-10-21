@@ -14,6 +14,10 @@ class ExamplePreview extends Editor
 	private var prop:HxmlProps;
 	private var scroll:Vector2;
 
+	static var s_helpBox:GUIStyle;
+	static var s_entryWarn:GUIStyle;
+	static var s_txtWarn:GUIStyle;
+
 	private function OnEnable()
 	{
 		Repaint();
@@ -21,6 +25,17 @@ class ExamplePreview extends Editor
 
 	@:overload override public function OnInspectorGUI()
 	{
+		if (s_helpBox == null)
+		{
+			s_helpBox = new GUIStyle(untyped 'HelpBox');
+			s_helpBox.padding = new RectOffset(10,10,10,10);
+			s_entryWarn = untyped 'CN EntryWarn';
+			s_txtWarn = new GUIStyle(untyped 'CN StatusWarn');
+			s_txtWarn.wordWrap = true;
+			s_txtWarn.alignment = MiddleLeft;
+			s_txtWarn.stretchWidth = true;
+		}
+
 		var path = AssetDatabase.GetAssetPath(target);
 		switch (path.split('.').pop())
 		{
@@ -51,6 +66,19 @@ class ExamplePreview extends Editor
 				{
 					// prop.compile(['--cwd','./Assets','params.hxml','--macro','unihx.pvt.Compiler.compile()']);
 					unityeditor.AssetDatabase.Refresh();
+				}
+
+				var warns = this.prop.getWarnings();
+				if (warns.length > 0)
+				{
+					GUILayout.Space(15);
+					for (w in warns)
+					{
+						GUILayout.BeginHorizontal(s_helpBox, new cs.NativeArray(0));
+						GUILayout.Label('', s_entryWarn, new cs.NativeArray(0));
+						GUILayout.Label(w.msg, s_txtWarn, new cs.NativeArray(0));
+						GUILayout.EndHorizontal();
+					}
 				}
 				Repaint();
 
