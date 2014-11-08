@@ -25,7 +25,15 @@ class HxmlProps implements InspectorBuild
 		this.file = file;
 	}
 
+	/**
+		External haxelibs used other than unihx
+	 **/
 	public var libraries:Array<String>;
+
+	/**
+		Additional defines
+	**/
+	public var defines:Array<{ key:String, value:String }>;
 
 	/**
 		@label Advanced Options
@@ -119,6 +127,17 @@ class HxmlProps implements InspectorBuild
 				b.add('-lib $lib\n');
 		}
 
+		for (def in defines)
+		{
+			if(def != null && def.key != null)
+			{
+				b.add('-D ${def.key}');
+				if (def.value != null && def.value != '')
+					b.add('=${def.value}');
+				b.add('\n');
+			}
+		}
+
 		b.add('\n# required\n');
 		b.add('classpaths.hxml\n');
 		b.add('-lib unihx\n');
@@ -171,6 +190,7 @@ class HxmlProps implements InspectorBuild
 		advanced.deleteUnused = true;
 		advanced.vcsFriendly = true;
 		libraries = [];
+		defines = [];
 		var lineNum = 0;
 		try
 		{
@@ -227,6 +247,11 @@ class HxmlProps implements InspectorBuild
 					case ['-lib', l]:
 						 if (l != '')
 							 libraries.push(l);
+					case ['-D', key]:
+						 var sp = key.trim().split('=');
+						 var key = sp.shift().trim(),
+								 val = sp.join('=').trim();
+						 defines.push({ key:key, value:val });
 
 					default:
 						buf.add(ln);

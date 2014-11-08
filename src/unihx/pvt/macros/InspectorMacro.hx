@@ -299,8 +299,7 @@ class InspectorMacro
 		return td.fields;
 	}
 
-
-	private static function getDefault(t:ComplexType, pos:Position, forceExpr=false):Null<Expr>
+	public static function getDefault(t:ComplexType, pos:Position, forceExpr=false):Null<Expr>
 	{
 		switch(t)
 		{
@@ -558,7 +557,8 @@ class InspectorCall
 				var lastEThis = ethis,
 						lastEField = efield,
 						lastField = field;
-				ethis = { expr: EField(lastEThis, field.name), pos:lastEThis.pos };
+				// ethis = { expr: EField(lastEThis, field.name), pos:lastEThis.pos };
+				ethis = efield;
 				var fnames = [ for (f in fields) f.name ];
 				fnames.sort(Reflect.compare);
 				var name = fnames.join("$");
@@ -617,6 +617,18 @@ class InspectorCall
 				var content = guiContent;
 				guiContent = macro label;
 				var element = recurseExpr(ethis, { expr:EArray(efield, macro i), pos:efield.pos }, field, params[0]);
+				var def = InspectorMacro.getDefault(params[0].toComplexType(), efield.pos);
+				var defExpr = def == null ? macro {} : macro for (i in 0...len) { if ($efield[i] == cast null) $efield[i] = $def; };
+				var doLabelBeg = macro {}, doLabelEnd = macro {};
+				switch (params[0].follow()) {
+					case TAnonymous(_):
+						doLabelBeg = macro {
+							unityeditor.EditorGUILayout.LabelField(label,null);
+							unityeditor.EditorGUI.indentLevel++;
+						};
+						doLabelEnd = macro unityeditor.EditorGUI.indentLevel--;
+					case _:
+				}
 				var efield_folded = { expr:EField(ethis,field.name + '_is_folded'), pos:field.pos };
 				block.push(macro {
 					if ($efield_folded = unityeditor.EditorGUILayout.Foldout($efield_folded, $guiContent))
@@ -626,11 +638,14 @@ class InspectorCall
 						if (len != $efield.length)
 						{
 							$efield = $efield.slice(0,len);
+							$defExpr;
 						}
 						for (i in 0...len)
 						{
 							var label = 'Element ' + i;
+							$doLabelBeg;
 							$element;
+							$doLabelEnd;
 						}
 						unityeditor.EditorGUI.indentLevel--;
 					}
