@@ -64,8 +64,6 @@ using StringTools;
 		{
 			refresh = true;
 			HaxeCompiler.current.compile(HxmlProps.get().advanced.verbose);
-			// var comp = HaxeProperties.props();
-			// var success = comp.compile(['--cwd','./Assets','build.hxml','--macro','unihx.pvt.Compiler.compile()']);
 		}
 		if (refresh)
 		{

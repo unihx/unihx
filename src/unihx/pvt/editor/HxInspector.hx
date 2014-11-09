@@ -8,8 +8,8 @@ import sys.FileSystem.*;
 
 @:meta(UnityEditor.CustomEditor(typeof(UnityEngine.Object)))
 @:nativeGen
-@:native('ExamplePreview')
-class ExamplePreview extends Editor
+@:native('HxInspector')
+class HxInspector extends Editor
 {
 	private var prop:HxmlProps;
 	private var scroll:Vector2;
@@ -64,7 +64,7 @@ class ExamplePreview extends Editor
 				GUILayout.Space(3);
 				if (GUILayout.Button("Force Recompilation",buttonLayout))
 				{
-					// prop.compile(['--cwd','./Assets','params.hxml','--macro','unihx.pvt.Compiler.compile()']);
+					HaxeCompiler.current.compile(this.prop.advanced.verbose);
 					unityeditor.AssetDatabase.Refresh();
 				}
 

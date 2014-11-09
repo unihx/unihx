@@ -5,7 +5,7 @@ import sys.FileSystem.*;
 using StringTools;
 
 @:meta(UnityEditor.InitializeOnLoad)
-@:nativeGen @:keep class ExampleIconChange
+@:nativeGen @:keep class IconChange
 {
 	static function __init__()
 	{
