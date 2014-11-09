@@ -19,7 +19,7 @@ class HxmlProps implements InspectorBuild
 		return _cur;
 	}
 
-	private var file:String;
+	@:skip public var file(default,null):String;
 	public function new(file="Assets/build.hxml")
 	{
 		this.file = file;
