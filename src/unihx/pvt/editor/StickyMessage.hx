@@ -7,7 +7,6 @@ import unihx.pvt.editor.IMessageContainer;
 @:nativeGen @:keep class StickyMessage
 {
 	static var containers:Array<IMessageContainer> = [];
-	static var lastMessages:Array<{ c:IMessageContainer, msgs:Array<Message> }> = [];
 
 	static var lastCount = -1;
 	static function __init__()
@@ -52,7 +51,7 @@ import unihx.pvt.editor.IMessageContainer;
 			case Warning:
 				Debug.LogWarning(contents);
 			case CompilerError:
-				buildError(contents, msg.pos.file, msg.pos.line, msg.pos.column);
+				buildError(msg.pos.file + ": " +contents, msg.pos.file, msg.pos.line, msg.pos.column);
 		}
 	}
 
