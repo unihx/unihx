@@ -60,10 +60,13 @@ using StringTools;
 				refresh = true;
 			}
 		}
-		if (sources.length > 0)
+		if (HxmlProps.get().autoCompilation)
 		{
-			refresh = true;
-			HaxeCompiler.current.compile(HxmlProps.get().advanced.verbose);
+			if (sources.length > 0)
+			{
+				refresh = true;
+				HaxeCompiler.current.compile(HxmlProps.get().advanced.verbose);
+			}
 		}
 		if (refresh)
 		{

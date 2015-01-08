@@ -26,6 +26,11 @@ class HxmlProps implements InspectorBuild
 	}
 
 	/**
+		Should Unity automatically compile .hx classes when they are changed?
+	 **/
+	public var autoCompilation:Bool;
+
+	/**
 		External haxelibs used other than unihx
 	 **/
 	public var libraries:Array<String>;
@@ -90,6 +95,8 @@ class HxmlProps implements InspectorBuild
 	{
 		var b = new StringBuf();
 		b.add('# options\n');
+		if (!this.autoCompilation)
+			b.add('#no-compilation\n');
 		if (advanced != null)
 		{
 			if (advanced.verbose)
@@ -189,6 +196,7 @@ class HxmlProps implements InspectorBuild
 		advanced.errorPositions = RelativePathsOnly;
 		advanced.deleteUnused = true;
 		advanced.vcsFriendly = true;
+		this.autoCompilation = true;
 		libraries = [];
 		defines = [];
 		var lineNum = 0;
@@ -210,6 +218,8 @@ class HxmlProps implements InspectorBuild
 						advanced.noRoot = true;
 					case ['#dont-delete-unused',_]:
 						advanced.deleteUnused = false;
+					case ['#no-compilation',_]:
+						autoCompilation = false;
 					case ['#-D', 'independent-fieldlookup']:
 						advanced.vcsFriendly = false;
 					case ['-D', 'independent-fieldlookup']:
