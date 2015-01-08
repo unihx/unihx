@@ -560,6 +560,7 @@ class YieldGenerator
 				ret: null,
 				expr: { expr:EBlock([ for (arg in extChanged) { var name = getVarName(arg); macro this.$name = $i{name}; } ]), pos:pos }
 			}),
+			access: [APublic],
 			pos: pos
 		};
 
