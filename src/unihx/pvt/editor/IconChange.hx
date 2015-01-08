@@ -14,13 +14,20 @@ using StringTools;
 		{
 			for (file in readDirectory(dir)) if (file.endsWith('.png'))
 			{
-
+				function init()
+				{
+					var importer:TextureImporter = cast AssetImporter.GetAtPath('$dir/$file');
+					importer.textureFormat = TextureImporterFormat.ARGB32;
+					importer.alphaIsTransparency = true;
+					importer.mipmapEnabled = true;
+					importer.filterMode = FilterMode.Trilinear;
+					AssetDatabase.ImportAsset('$dir/$file');
+				}
 				var importer:TextureImporter = cast AssetImporter.GetAtPath('$dir/$file');
-				importer.textureFormat = TextureImporterFormat.ARGB32;
-				importer.alphaIsTransparency = true;
-				importer.mipmapEnabled = true;
-				importer.filterMode = FilterMode.Trilinear;
-				AssetDatabase.ImportAsset('$dir/$file');
+				if (importer == null)
+					unityeditor.EditorApplication.delayCall += function() init();
+				else
+					init();
 			}
 		}
 		unityeditor.EditorApplication.hierarchyWindowItemOnGUI += function(instanceId:Int, r:Rect) {
