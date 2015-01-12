@@ -16,6 +16,8 @@ using StringTools;
 			{
 
 				var importer:TextureImporter = cast AssetImporter.GetAtPath('$dir/$file');
+				if (importer == null)
+				    throw "Importer is null";
 				importer.textureFormat = TextureImporterFormat.ARGB32;
 				importer.alphaIsTransparency = true;
 				importer.mipmapEnabled = true;

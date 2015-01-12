@@ -112,6 +112,10 @@ class InspectorMacro
 		return newf;
 	}
 
+	public static function buildFieldsToGUI(fields:Array<Field>) {
+		
+	}
+
 	public static function build(fieldName:Null<String>):Array<Field>
 	{
     if (defined('display'))
@@ -122,14 +126,17 @@ class InspectorMacro
 		var toRun = [];
 		for (f in fields)
 		{
+                    trace("Field: " + f.name);
 			switch (f.kind)
 			{
-				case FVar(t,e):
-					if (!f.meta.exists(function(v) return v.name == ":skip") && f.access.has(APublic))
+                        case FVar(t,e)
+                            if (!f.meta.exists(function(v) return v.name == ":skip") && f.access.has(APublic)):
 						toRun.push(f);
-				case FProp(get,set,t,e):
-					if (!f.meta.exists(function(v) return v.name == ":skip") && f.access.has(APublic))
+                                                trace("Will run");
+				case FProp(get,set,t,e)
+                                    if (!f.meta.exists(function(v) return v.name == ":skip") && f.access.has(APublic)):
 						toRun.push(f);
+                                                trace("Will run");
 				case _:
 			}
 		}
