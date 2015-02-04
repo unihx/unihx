@@ -11,6 +11,8 @@ using StringTools;
 
 @:nativeGen @:keep class AssetProcessor extends unityeditor.AssetPostprocessor
 {
+	static var passes = new unihx.pvt.CompPasses('Assets');
+
 	static function OnPostprocessAllAssets(
 			importedAssets:Vector<String>,
 			deletedAssets:Vector<String>,
