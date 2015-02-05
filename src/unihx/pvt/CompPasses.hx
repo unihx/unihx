@@ -21,6 +21,20 @@ class CompPasses
 		runPass(basePath, sndPass, false);
 	}
 
+	public function compile(compiler:HaxeCompiler, hxml:HxmlProps):Bool
+	{
+		var args = ['--cwd',haxe.io.Path.directory(hxml.file)];
+
+		// var onlyif (hxml.
+		//TODO support compilation server here
+
+		var toRemove = [];
+		for (pass in [ fstPass.editor, fstPass.files, sndPass.editor, sndPass.files ])
+		{
+		}
+		args.push(haxe.io.Path.withoutDirectory(hxml.file));
+	}
+
 	public function addSource(file:String)
 	{
 		getPass(file).addPath(file);

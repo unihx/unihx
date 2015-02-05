@@ -8,14 +8,14 @@ using StringTools;
 
 class HaxeCompiler implements IMessageContainer
 {
-	public static var current(default,null):HaxeCompiler = new HaxeCompiler(['--cwd','./Assets','build.hxml','--macro','unihx.pvt.macros.Compile.compile()']);
+	public static var current(default,null):HaxeCompiler = new HaxeCompiler();
+
+	var port:Int;
 	var process:Process;
 	var messages:Array<Message>;
-	var args:Array<String>;
 
-	public function new(args:Array<String>)
+	public function new()
 	{
-		this.args = args;
 		messages = [];
 		if (current == null) StickyMessage.addContainer(this);
 	}
@@ -44,6 +44,15 @@ class HaxeCompiler implements IMessageContainer
 		messages_push({ msg:msg, pos:pos, kind:Warning });
 	}
 
+	public function ensurePort(port:Int):Void
+	{
+		if (process == null || port != this.port)
+		{
+			this.port = port;
+			newProcess(port);
+		}
+	}
+
 	function newProcess(port:Int)
 	{
 		if (process != null)
@@ -55,11 +64,13 @@ class HaxeCompiler implements IMessageContainer
 			}
 			catch(e:Dynamic) {}
 		}
+
 		process = null;
 		process = new Process('haxe',['--wait',port + ""]);
+		this.port = port;
 	}
 
-	public function compile(verbose=false):Bool
+	public function compile(args:Array<String>, verbose=false):Bool
 	{
 		if (messages.length != 0)
 			StickyMessage.clearConsole();
