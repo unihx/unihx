@@ -147,8 +147,15 @@ class InitCmd extends Cli
 	{
 		if (exists(assets + "/hx-compiled") || exists(assets + "/Standard Assets/Haxe-Std"))
 		{
-			if (ask("An old version of unihx was detected. Please note that Unihx has changed how it generated projects before version 1.0. Would you like to update it? Note that backing up your project is strongly recommended."))
+			if (
+				ask("An old version of unihx was detected. Please note that Unihx has changed how it generated projects before version 0.0.1. Would you like to update it? Note that backing up your project before is strongly recommended.")
+				&& ask("Please close your Unity Editor application before continuing. Continue?")
+			)
 			{
+				// go through all folders
+				// if hx-compiled folder, save the meta files and delete the rest
+				// go through all Standard Assets/Haxe-Std and Editor/Haxe-Std and delete all files there as well
+				// build the project again and copy the meta files as needed
 				err('Not implemented yet');
 			} else {
 				err('Cancelled by the user');
