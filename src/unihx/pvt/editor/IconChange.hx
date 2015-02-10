@@ -9,19 +9,24 @@ using StringTools;
 {
 	static function __init__()
 	{
-		var dir = 'Assets/Editor Default Resources/unihx';
+		var dir = 'Assets/Editor Default Resources/Unihx';
 		if (exists(dir))
 		{
-			for (file in readDirectory(dir)) if (file.endsWith('.png'))
+			var next:unityeditor.EditorApplication.EditorApplication_CallbackFunction = null;
+			next = function()
 			{
-
-				var importer:TextureImporter = cast AssetImporter.GetAtPath('$dir/$file');
-				importer.textureFormat = TextureImporterFormat.ARGB32;
-				importer.alphaIsTransparency = true;
-				importer.mipmapEnabled = true;
-				importer.filterMode = FilterMode.Trilinear;
-				AssetDatabase.ImportAsset('$dir/$file');
-			}
+				for (file in readDirectory(dir)) if (file.endsWith('.png'))
+				{
+					var importer:TextureImporter = cast AssetImporter.GetAtPath('$dir/$file');
+					importer.textureFormat = TextureImporterFormat.ARGB32;
+					importer.alphaIsTransparency = true;
+					importer.mipmapEnabled = true;
+					importer.filterMode = FilterMode.Trilinear;
+					AssetDatabase.ImportAsset('$dir/$file');
+				}
+				unityeditor.EditorApplication.update -= next;
+			};
+			unityeditor.EditorApplication.update += next;
 		}
 		unityeditor.EditorApplication.hierarchyWindowItemOnGUI += function(instanceId:Int, r:Rect) {
 			var obj = DragAndDrop.objectReferences;
@@ -106,7 +111,7 @@ using StringTools;
 					}
 
 					var tex = (file.endsWith('.hx')) ? 'unihx_logo_$size.png' : 'unihx_config_logo_$size.png';
-					GUI.DrawTexture(rect, cast AssetDatabase.LoadAssetAtPath( 'Assets/Editor Default Resources/unihx/$tex', cs.Lib.toNativeType(Texture2D)));
+					GUI.DrawTexture(rect, cast AssetDatabase.LoadAssetAtPath( 'Assets/Editor Default Resources/Unihx/$tex', cs.Lib.toNativeType(Texture2D)));
 
 					// show extension
 					// if (r.height > 20)

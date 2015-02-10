@@ -192,6 +192,7 @@ class InitCmd extends Cli
 		if (!exists(assets + '/../Temp/Unihx'))
 			createDirectory(assets + '/../Temp/Unihx');
 
+		//TODO: if on release version, do not compile the bootstrap code; instead use the precompiled .dll
 		print("Compiling bootstrap code...");
 
 		var args = ['--cwd',assets,'-cs','../Temp/Unihx/unihx-bootstrap','-D','dll','--macro','include("unihx.pvt.editor")','-debug'];
@@ -216,17 +217,17 @@ class InitCmd extends Cli
 		}
 
 		// copy assets to Editor Default Resources
+		if (exists(assets + '/Editor Default Resources/Unihx'))
+			deleteAll(assets + '/Editor Default Resources/Unihx');
 		if (exists(assets + '/Editor Default Resources/unihx'))
-		{
 			deleteAll(assets + '/Editor Default Resources/unihx');
-		}
 
-		createDirectory(assets + '/Editor Default Resources/unihx');
+		createDirectory(assets + '/Editor Default Resources/Unihx');
 		var unihx = this.getUnihxPath() + "/extra/assets/icons";
 		for (file in readDirectory(unihx))
 		{
 			if (file.endsWith('.png'))
-				copy('$unihx/$file', '$assets/Editor Default Resources/unihx/$file');
+				copy('$unihx/$file', '$assets/Editor Default Resources/Unihx/$file');
 		}
 	}
 
