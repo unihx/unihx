@@ -1,7 +1,7 @@
 package unihx.pvt.editor;
 import unityengine.*;
 import cs.system.reflection.*;
-import unihx.pvt.editor.IMessageContainer;
+import unihx.pvt.IMessageContainer;
 
 @:meta(UnityEditor.InitializeOnLoad)
 @:nativeGen @:keep class StickyMessage
@@ -21,14 +21,19 @@ import unihx.pvt.editor.IMessageContainer;
 		var count = getCount();
 		if (count < lastCount || count == 0)
 		{
+			var showAll = count == 0;
+
 			for (c in containers)
 			{
 				for (msg in c.getMessages())
 				{
-					showMessage(msg);
+					if (showAll || !msg.shown)
+						showMessage(msg);
+					msg.shown = true;
 				}
 			}
 		}
+		lastCount = count;
 	}
 
 	public static function showMessage(msg:Message)

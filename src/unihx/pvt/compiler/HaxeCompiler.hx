@@ -1,15 +1,14 @@
-package unihx.pvt.editor;
+package unihx.pvt.compiler;
+
+import Std.*;
 import sys.io.Process;
 import unityengine.*;
-import Std.*;
-import unihx.pvt.editor.IMessageContainer;
+import unihx.pvt.IMessageContainer;
 
 using StringTools;
 
 class HaxeCompiler implements IMessageContainer
 {
-	public static var current(default,null):HaxeCompiler = new HaxeCompiler();
-
 	var port:Int;
 	var process:Process;
 	var messages:Array<Message>;
@@ -17,7 +16,6 @@ class HaxeCompiler implements IMessageContainer
 	public function new()
 	{
 		messages = [];
-		if (current == null) StickyMessage.addContainer(this);
 	}
 
 	public function getMessages()
@@ -27,7 +25,6 @@ class HaxeCompiler implements IMessageContainer
 
 	private function messages_push(m:Message)
 	{
-		StickyMessage.showMessage(m);
 		messages.push(m);
 	}
 
@@ -72,8 +69,6 @@ class HaxeCompiler implements IMessageContainer
 
 	public function compile(args:Array<String>, verbose=false):Bool
 	{
-		if (messages.length != 0)
-			StickyMessage.clearConsole();
 		messages = [];
 		var cmd = new Process('haxe',args);
 

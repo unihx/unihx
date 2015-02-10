@@ -11,14 +11,15 @@ using StringTools;
 
 @:nativeGen @:keep class AssetProcessor extends unityeditor.AssetPostprocessor
 {
-	static var passes = new unihx.pvt.CompPasses(haxe.io.Path.directory( HxmlProps.get().file ));
-
 	static function OnPostprocessAllAssets(
 			importedAssets:Vector<String>,
 			deletedAssets:Vector<String>,
 			movedAssets:Vector<String>,
 			movedFromAssetPaths:Vector<String>)
 	{
+		var chain = Globals.chain;
+		var passes = chain.passes;
+
 		for (str in importedAssets)
 		{
 			if (str.endsWith(".hx"))
@@ -51,18 +52,9 @@ using StringTools;
 				passes.deleteDll(d);
 		}
 
-		if (passes.compile( HaxeCompiler.current, HxmlProps.get() ))
+		if (chain.compile())
 		{
 			unityeditor.AssetDatabase.Refresh();
 		}
-		// if (sources.length > 0)
-		// {
-		// 	refresh = true;
-		// 	HaxeCompiler.current.compile(HxmlProps.get().advanced.verbose);
-		// }
-		// if (refresh)
-		// {
-		// 	unityeditor.AssetDatabase.Refresh();
-		// }
 	}
 }

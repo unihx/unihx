@@ -1,6 +1,7 @@
 package unihx.pvt.editor;
 import unityengine.*;
 import unityeditor.*;
+import unihx.pvt.compiler.*;
 import haxe.ds.Vector;
 import unihx.inspector.*;
 using StringTools;
@@ -42,7 +43,7 @@ class HxInspector extends Editor
 			case 'hxml' if (path == 'Assets/build.hxml'):
 				if (this.prop == null)
 				{
-					this.prop = HxmlProps.get();
+					this.prop = Globals.chain.hxml;
 				}
 				GUI.enabled = true;
 				// scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
@@ -64,7 +65,7 @@ class HxInspector extends Editor
 				GUILayout.Space(3);
 				if (GUILayout.Button("Force Recompilation",buttonLayout))
 				{
-					HaxeCompiler.current.compile(this.prop.advanced.verbose);
+					Globals.chain.compile();
 					unityeditor.AssetDatabase.Refresh();
 				}
 

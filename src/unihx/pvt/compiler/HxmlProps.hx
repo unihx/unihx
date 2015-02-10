@@ -1,10 +1,9 @@
-package unihx.pvt;
-import unityengine.*;
-import unityeditor.*;
+package unihx.pvt.compiler;
 import haxe.ds.Vector;
-import unihx.inspector.*;
-using StringTools;
 import sys.FileSystem.*;
+import unihx.inspector.*;
+
+using StringTools;
 
 class HxmlProps implements InspectorBuild
 {

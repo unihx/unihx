@@ -1,6 +1,7 @@
-package unihx.pvt;
+package unihx.pvt.compiler;
 import sys.FileSystem.*;
 using StringTools;
+using Lambda;
 
 class CompPasses
 {
@@ -11,28 +12,107 @@ class CompPasses
 
 	public function new(basePath)
 	{
-		this.fstPass = { editor:new Pass(), files:new Pass() };
-		this.sndPass = { editor:new Pass(), files:new Pass() };
+		this.fstPass = { editor:new Pass('fstpass-editor'), files:new Pass('fstpass') };
+		this.sndPass = { editor:new Pass('sndpass-editor'), files:new Pass('sndpass') };
 		this.basePath = fullPath(basePath);
 
 		runPass('$basePath/Standard Assets', fstPass, true);
 		runPass('$basePath/Pro Standard Assets', fstPass, true);
 		runPass('$basePath/Plugins', fstPass, true);
 		runPass(basePath, sndPass, false);
+
+		// stash folder
+		if (!exists('$basePath/../Temp/Unihx'))
+			createDirectory('$basePath/../Temp/Unihx');
 	}
 
 	public function compile(compiler:HaxeCompiler, hxml:HxmlProps):Bool
 	{
 		var args = ['--cwd',haxe.io.Path.directory(hxml.file)];
 
-		// var onlyif (hxml.
-		//TODO support compilation server here
+		var verbose = hxml.advanced.verbose;
 
-		var toRemove = [];
+		//TODO support compilation server here
+		var hadErrors = compiler.getMessages().exists(function(v) return v.kind != Warning);
+
+		// in the future we may support to build only what changed;
+		// will need DCE off and a new way to deal with FieldLookup
+		var compileOnlyChanges = false;
+		var toRemove = [],
+		    dlls = [];
+		var first = true;
 		for (pass in [ fstPass.editor, fstPass.files, sndPass.editor, sndPass.files ])
 		{
+			var curArgs = [];
+			var changed = pass.changedFiles;
+
+			var canSkip = pass.fileCount == 0;
+			for (dll in pass.dlls)
+				dlls.push(dll);
+
+			if (canSkip) continue;
+			for (r in toRemove)
+			{
+				curArgs.push('--macro');
+				curArgs.push('remove("$r")');
+			}
+
+			if (compileOnlyChanges)
+			{
+				if (changed.length == 0 && !hadErrors)
+					canSkip = true;
+				for (c in changed)
+				{
+					var hxpath = pass.fileMap[c];
+					if (hxpath == null) throw 'assert';
+					curArgs.push(hxpath);
+					toRemove.push(hxpath);
+				}
+			} else {
+				var i = 0;
+				for (hxpath in pass.fileMap)
+				{
+					i++;
+					curArgs.push(hxpath);
+					toRemove.push(hxpath);
+				}
+				if (i == 0)
+					canSkip = true;
+			}
+
+			if (canSkip) continue;
+			if (first) first = false; else args.push('--next');
+			args.push( haxe.io.Path.withoutDirectory(hxml.file) );
+			for (dll in dlls)
+			{
+				args.push('-net-lib');
+				args.push(dll);
+			}
+			args = args.concat(curArgs);
+
+			//TODO add here support for compiling to a DLL using Temp/Unihx stash
+			args.push('-cs');
+			var dir = switch(pass.name) {
+				case 'fstpass-editor':
+					'Standard Assets/Editor/Unihx/hx-compiled';
+				case 'fstpass':
+					'Standard Assets/Unihx/hx-compiled';
+				case 'sndpass-editor':
+					'Unihx/Editor/hx-compiled';
+				case 'sndpass':
+					'Unihx/hx-compiled';
+				case _: throw 'assert';
+			}
+
+			if (!exists('$basePath/$dir'))
+				createDirectory('$basePath/$dir');
+			args.push(dir);
 		}
-		args.push(haxe.io.Path.withoutDirectory(hxml.file));
+
+		if (first)
+			return true; //nothing to compile
+
+		return compiler.compile(args,verbose);
 	}
 
 	public function addSource(file:String)
@@ -153,25 +233,32 @@ class CompPasses
 
 private class Pass
 {
-	var dlls:Array<String>;
-	var fileMap:Map<String, String>;
+	public var dlls:Array<String>;
+	public var fileMap:Map<String, String>;
+	public var fileCount:Int;
 
-	var changedFiles:Array<String>;
-	var dirty:Bool;
+	public var changedFiles:Array<String>;
+	public var dirty:Bool;
 
-	public function new()
+	public var name:String;
+
+	public function new(name)
 	{
+		this.name = name;
 		// this.files = [];
 		this.dlls = [];
 		this.fileMap = new Map();
 
 		this.changedFiles = [];
 		this.dirty = false;
+		this.fileCount = 0;
 	}
 
 	public function addPath(path:String)
 	{
 		var full = fullPath(path);
+		if (!fileMap.exists(full))
+			fileCount++;
 		fileMap[full] = getModule(path);
 		changedFiles.push(full);
 	}
@@ -276,7 +363,8 @@ private class Pass
 	public function deletePath(path:String)
 	{
 		var full = fullPath(path);
-		fileMap.remove(full);
+		if (fileMap.remove(full))
+			fileCount--;
 	}
 
 	public function addDll(path:String)
