@@ -85,7 +85,7 @@ class HxmlProps implements InspectorBuild
 
 	private var warnings:Array<{ msg:String, line:Int }>;
 
-	private function getSaveContents()
+	function getSaveContents(addTarget=false):String
 	{
 		var b = new StringBuf();
 		b.add('# options\n');
@@ -140,8 +140,8 @@ class HxmlProps implements InspectorBuild
 		b.add('\n# required\n');
 		b.add('classpaths.hxml\n');
 		b.add('-lib unihx\n');
-		b.add('-cs hx-compiled\n');
-		b.add('-D unity_std_target=Standard Assets\n');
+		if (addTarget)
+			b.add('-cs ../Temp/Unihx/stash\n');
 		b.add('\n');
 
 		b.add("# Add your own compiler parameters after this line: \n\n");
@@ -150,10 +150,30 @@ class HxmlProps implements InspectorBuild
 		return b.toString();
 	}
 
+	public function getArguments(?args:Array<String>):Array<String>
+	{
+		if (args == null) args = [];
+		for (arg in getSaveContents(false).split('\n'))
+		{
+			var arg = arg.trim();
+			if (arg.length == 0 || arg.charCodeAt(0) == '#'.code)
+				continue;
+			if (arg.charCodeAt(0) == '-'.code)
+			{
+				var div = arg.split(' ');
+				args.push(div.shift());
+				args.push(div.join(' '));
+			} else {
+				args.push(arg);
+			}
+		}
+		return args;
+	}
+
 	public function save()
 	{
 		var w = sys.io.File.write(file);
-		w.writeString(getSaveContents());
+		w.writeString(getSaveContents(true));
 		w.close();
 	}
 

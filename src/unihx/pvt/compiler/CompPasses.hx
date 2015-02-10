@@ -28,10 +28,13 @@ class CompPasses
 
 	public function compile(compiler:HaxeCompiler, hxml:HxmlProps):Bool
 	{
-		var args = ['--cwd',haxe.io.Path.directory(hxml.file)];
+		var args = ['--cwd',haxe.io.Path.directory(hxml.file),'-D','no-compilation'];
+		// add the hxml arguments directly - don't use build.hxml
+		hxml.getArguments(args);
+
+		args.push('--each');
 
 		var verbose = hxml.advanced.verbose;
-
 		//TODO support compilation server here
 		var hadErrors = compiler.getMessages().exists(function(v) return v.kind != Warning);
 
@@ -82,7 +85,6 @@ class CompPasses
 
 			if (canSkip) continue;
 			if (first) first = false; else args.push('--next');
-			args.push( haxe.io.Path.withoutDirectory(hxml.file) );
 			for (dll in dlls)
 			{
 				args.push('-net-lib');
