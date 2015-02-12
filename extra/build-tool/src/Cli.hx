@@ -196,6 +196,7 @@ class InitCmd extends Cli
 		if (exists(assets + '/params.hxml'))
 			if (ask('A params.hxml file was found in your Assets folder. Its use is deprecated and `build.hxml` will be used instead. Would you like to remove it?'))
 				deleteFile(assets + '/params.hxml');
+
 		if (!exists(assets + '/../Temp/Unihx'))
 			createDirectory(assets + '/../Temp/Unihx');
 

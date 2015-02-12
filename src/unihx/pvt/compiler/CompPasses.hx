@@ -5,10 +5,10 @@ using Lambda;
 
 class CompPasses
 {
+	public var basePath(default,null):String;
+
 	var fstPass:{ editor:Pass, files:Pass };
 	var sndPass:{ editor:Pass, files:Pass };
-
-	var basePath:String;
 
 	public function new(basePath)
 	{
@@ -24,6 +24,11 @@ class CompPasses
 		// stash folder
 		if (!exists('$basePath/../Temp/Unihx'))
 			createDirectory('$basePath/../Temp/Unihx');
+	}
+
+	public function iterator()
+	{
+		return [fstPass.files, fstPass.editor, sndPass.files, sndPass.editor].iterator();
 	}
 
 	public function compile(compiler:HaxeCompiler, hxml:HxmlProps):Bool
@@ -94,17 +99,7 @@ class CompPasses
 
 			//TODO add here support for compiling to a DLL using Temp/Unihx stash
 			args.push('-cs');
-			var dir = switch(pass.name) {
-				case 'fstpass-editor':
-					'Standard Assets/Editor/Unihx/hx-compiled';
-				case 'fstpass':
-					'Standard Assets/Unihx/hx-compiled';
-				case 'sndpass-editor':
-					'Unihx/Editor/hx-compiled';
-				case 'sndpass':
-					'Unihx/hx-compiled';
-				case _: throw 'assert';
-			}
+			var dir = pass.getCompilePath();
 
 			if (!exists('$basePath/$dir'))
 				createDirectory('$basePath/$dir');
@@ -265,6 +260,21 @@ private class Pass
 		changedFiles.push(full);
 	}
 
+	public function getCompilePath()
+	{
+			return switch(name) {
+				case 'fstpass-editor':
+					'Standard Assets/Editor/Unihx/hx-compiled';
+				case 'fstpass':
+					'Standard Assets/Unihx/hx-compiled';
+				case 'sndpass-editor':
+					'Unihx/Editor/hx-compiled';
+				case 'sndpass':
+					'Unihx/hx-compiled';
+				case _: throw 'assert';
+			}
+	}
+
 	private function getModule(path:String)
 	{
 		var name = haxe.io.Path.withoutDirectory(path).substr(0,-3);
@@ -345,6 +355,14 @@ private class Pass
 					case 'u'.code if (ident() == 'sing'):
 						while (next != ';'.code)
 							ident();
+					// case 'c'.code if (ident() == 'lass'):
+					// 	break;
+					// case 't'.code if (ident() == 'ypedef'):
+					// 	break;
+					// case 'e'.code if (ident() == 'num'):
+					// 	break;
+					// case 'a'.code if (ident() == 'bstract'):
+					// 	break;
 					case _:
 						break;
 				}
