@@ -148,8 +148,8 @@ class InitCmd extends Cli
 		if (exists(assets + "/hx-compiled") || exists(assets + "/Standard Assets/Haxe-Std"))
 		{
 			if (
-				ask("An old version of unihx was detected. Please note that Unihx has changed how it generated projects before version 0.0.1. Would you like to update it? Note that backing up your project before is strongly recommended.")
-				&& ask("Please close your Unity Editor application before continuing. Continue?")
+				ask("An old version of unihx was detected. Please note that Unihx has changed how it generated projects since version 0.0.1. Would you like to update it? Note that backing up your project before running this is strongly recommended.")
+				&& ask("Please close your Unity Editor application and back up your project before continuing. Continue?")
 			)
 			{
 				// go through all folders

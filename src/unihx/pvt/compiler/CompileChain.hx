@@ -7,6 +7,7 @@ class CompileChain
 	public var hxml(default,null):HxmlProps;
 	public var compiler(default,null):HaxeCompiler;
 	public var passes(default,null):CompPasses;
+	public var metas(default,null):MetaHandler;
 
 	public function new(hxml:HxmlProps)
 	{
@@ -14,10 +15,11 @@ class CompileChain
 		this.basePath = haxe.io.Path.directory(hxml.file);
 		this.compiler = new HaxeCompiler();
 		this.passes = new CompPasses(basePath);
+		this.metas = new MetaHandler(passes);
 	}
 
-	public function compile():Bool
+	public function compile(forced:Bool):Bool
 	{
-		return passes.compile(compiler,hxml);
+		return passes.compile(forced,compiler,hxml);
 	}
 }

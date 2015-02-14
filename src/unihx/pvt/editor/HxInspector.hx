@@ -65,7 +65,7 @@ class HxInspector extends Editor
 				GUILayout.Space(3);
 				if (GUILayout.Button("Force Recompilation",buttonLayout))
 				{
-					Globals.chain.compile();
+					Globals.chain.compile(true);
 					unityeditor.AssetDatabase.Refresh();
 				}
 

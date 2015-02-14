@@ -1,5 +1,6 @@
 package unihx.pvt.compiler;
 import sys.FileSystem.*;
+import sys.FileSystem;
 using StringTools;
 using Lambda;
 
@@ -22,7 +23,7 @@ class CompPasses
 		runPass(basePath, sndPass, false);
 
 		// stash folder
-		if (!exists('$basePath/../Temp/Unihx'))
+		if (!FileSystem.exists('$basePath/../Temp/Unihx'))
 			createDirectory('$basePath/../Temp/Unihx');
 	}
 
@@ -31,7 +32,7 @@ class CompPasses
 		return [fstPass.files, fstPass.editor, sndPass.files, sndPass.editor].iterator();
 	}
 
-	public function compile(compiler:HaxeCompiler, hxml:HxmlProps):Bool
+	public function compile(forced:Bool, compiler:HaxeCompiler, hxml:HxmlProps):Bool
 	{
 		var args = ['--cwd',haxe.io.Path.directory(hxml.file),'-D','no-compilation'];
 		// add the hxml arguments directly - don't use build.hxml
@@ -49,10 +50,27 @@ class CompPasses
 		var toRemove = [],
 		    dlls = [];
 		var first = true;
-		for (pass in [ fstPass.editor, fstPass.files, sndPass.editor, sndPass.files ])
+
+		if (!forced)
+		{
+			var skip = true;
+			for (pass in this)
+			{
+				if (pass.changedFiles.length != 0)
+				{
+					skip = false;
+					break;
+				}
+			}
+			if (skip) return false;
+		}
+
+		for (pass in this)
 		{
 			var curArgs = [];
 			var changed = pass.changedFiles;
+			if (changed.length > 0)
+				pass.changedFiles = [];
 
 			var canSkip = pass.fileCount == 0;
 			for (dll in pass.dlls)
@@ -65,27 +83,25 @@ class CompPasses
 				curArgs.push('remove("$r")');
 			}
 
-			if (compileOnlyChanges)
+			if (changed.length == 0 && !hadErrors)
+				canSkip = true;
+			if (forced) canSkip = false;
+
+			if (!forced && compileOnlyChanges)
 			{
-				if (changed.length == 0 && !hadErrors)
-					canSkip = true;
 				for (c in changed)
 				{
 					var hxpath = pass.fileMap[c];
 					if (hxpath == null) throw 'assert';
-					curArgs.push(hxpath);
+					if (!canSkip) curArgs.push(hxpath);
 					toRemove.push(hxpath);
 				}
 			} else {
-				var i = 0;
 				for (hxpath in pass.fileMap)
 				{
-					i++;
-					curArgs.push(hxpath);
+					if (!canSkip) curArgs.push(hxpath);
 					toRemove.push(hxpath);
 				}
-				if (i == 0)
-					canSkip = true;
 			}
 
 			if (canSkip) continue;
@@ -101,7 +117,7 @@ class CompPasses
 			args.push('-cs');
 			var dir = pass.getCompilePath();
 
-			if (!exists('$basePath/$dir'))
+			if (!FileSystem.exists('$basePath/$dir'))
 				createDirectory('$basePath/$dir');
 			args.push(dir);
 		}
@@ -137,7 +153,7 @@ class CompPasses
 		getPass(file).deletePath(file);
 	}
 
-	private function getPass(path:String)
+	@:allow(unihx.pvt.compiler) private function getPass(path:String)
 	{
 		var fpath = fullPath(path);
 		if (fpath.startsWith(basePath))
@@ -181,7 +197,7 @@ class CompPasses
 
 	private function runPass(path:String, pass:{ editor:Pass, files:Pass }, editorOnRoot:Bool)
 	{
-		if (exists(path) && isDirectory(path))
+		if (FileSystem.exists(path) && isDirectory(path))
 		{
 			for (file in readDirectory(path))
 			{
@@ -228,7 +244,7 @@ class CompPasses
 	}
 }
 
-private class Pass
+class Pass
 {
 	public var dlls:Array<String>;
 	public var fileMap:Map<String, String>;
