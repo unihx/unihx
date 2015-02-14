@@ -120,7 +120,7 @@ class MetaHandler
 		var meta = csFile + '.meta';
 		if (!exists(meta))
 		{
-			trace('META DOES NOT EXIST!!!');
+			trace("Sanity check error: A .cs file exists but no associated .meta file was found. This shouldn't happen. Please submit a bug report. .cs file path: " + csFile);
 			return false;
 		}
 

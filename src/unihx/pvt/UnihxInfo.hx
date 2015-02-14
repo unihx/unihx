@@ -4,7 +4,5 @@ class UnihxInfo
 {
 	inline public static var VERSION = "0.0.2";
 
-	inline public static var HOWTO_INSTALL_WIN_URL = "http://example.org/todo";
-
-	inline public static var HOWTO_INSTALL_MAC_URL = "http://example.org/todo";
+	public static var HAXE_INSTALL_URL = if (Sys.systemName() == "Windows") "http://example.org/todo" else "http://example.org/todo";
 }
