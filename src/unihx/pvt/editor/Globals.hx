@@ -33,7 +33,8 @@ class Globals
 		var hxml = new HxmlProps();
 		hxml.reload();
 		chain = new CompileChain(hxml);
-		chain.metas.checkAll();
+		if (chain.metas.checkAll())
+			unityeditor.AssetDatabase.Refresh();
 
 		StickyMessage.addContainer(chain.compiler);
 		return chain;

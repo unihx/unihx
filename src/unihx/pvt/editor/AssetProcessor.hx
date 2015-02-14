@@ -20,6 +20,7 @@ using StringTools;
 		var chain = Globals.chain;
 		var passes = chain.passes;
 		var metas = chain.metas;
+		var anyChange = false;
 
 		for (str in importedAssets)
 		{
@@ -28,7 +29,7 @@ using StringTools;
 			else if (str.endsWith(".dll"))
 				passes.addDll(str);
 			else if (str.endsWith(".cs"))
-				metas.addCsFile(str);
+				anyChange = metas.addCsFile(str) || anyChange;
 		}
 
 		for (str in movedAssets)
@@ -38,7 +39,7 @@ using StringTools;
 			else if (str.endsWith(".dll"))
 				passes.addDll(str);
 			else if (str.endsWith(".cs"))
-				metas.addCsFile(str);
+				anyChange = metas.addCsFile(str) || anyChange;
 		}
 
 		for (d in movedFromAssetPaths)
@@ -61,7 +62,7 @@ using StringTools;
 				metas.removeCsFile(d);
 		}
 
-		if (chain.compile(false))
+		if (chain.compile(false) || anyChange)
 		{
 			unityeditor.AssetDatabase.Refresh();
 		}

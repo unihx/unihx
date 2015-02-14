@@ -24,20 +24,23 @@ class MetaHandler
 		this.paths = [ for (p in passes) fullPath(basePath + '/' + p.getCompilePath() + '/src').toLowerCase() => p ];
 	}
 
-	public function checkAll()
+	public function checkAll():Bool
 	{
+		var anyChange = false;
 		for (pass in passes)
 		{
-			check(pass);
+			anyChange = check(pass) || anyChange;
 		}
+		return anyChange;
 	}
 
-	public function check(pass:Pass)
+	public function check(pass:Pass):Bool
 	{
 		var name = pass.name;
 		var path = basePath + '/' + pass.getCompilePath() + '/src';
 		if (exists(path))
-			recurse(pass,path,'');
+			return recurse(pass,path,'');
+		return false;
 	}
 
 	function copy(from:String,to:String)
@@ -48,6 +51,8 @@ class MetaHandler
 	function recurse(pass:Pass, base:String, part:String)
 	{
 		var path = base + part;
+		var anyChange = false;
+
 		for (file in readDirectory(path))
 		{
 			var path = '$path/$file';
@@ -61,22 +66,24 @@ class MetaHandler
 					createDirectory(ppart);
 					copy(path,to);
 				} else {
-					checkGuid(path, to);
+					anyChange = checkGuid(path, to) || anyChange;
 				}
 			} else if (isDirectory(path)) {
-				recurse(pass, base, '$part/$file');
+				anyChange = recurse(pass, base, '$part/$file') || anyChange;
 			} else if (file.endsWith('.cs') && !exists(path + '.meta')) {
 				// copy the hxmeta here
 				var hxmeta = '$metaFolder/${pass.name}/$part/$file.metahx';
 				if (exists(hxmeta))
 				{
 					copy(hxmeta,path + '.meta');
+					anyChange = true;
 				}
 			}
 		}
+		return anyChange;
 	}
 
-	private function checkGuid(origMetaPath:String, hxMetaPath:String)
+	private function checkGuid(origMetaPath:String, hxMetaPath:String):Bool
 	{
 		var oc = File.getContent(origMetaPath),
 		    hxc = File.getContent(hxMetaPath);
@@ -87,12 +94,14 @@ class MetaHandler
 		} else if (og != hxg) {
 			// we'll always assume that the hxMeta GUID will be the correct one
 			copy(hxMetaPath,origMetaPath);
+			return true;
 		} else if (oc != hxc) {
 			//same GUID, but different contents: it can happen if the meta contents were updated
 			//in this case, copy the original meta to hxmeta
 			copy(origMetaPath,hxMetaPath);
 		}
 		// otherwise the values are the same and guid are the same. All is well.
+		return false;
 	}
 
 	private function getGuid(contents:String):Null<String>
@@ -106,13 +115,13 @@ class MetaHandler
 		return null;
 	}
 
-	public function addCsFile(csFile:String):Void
+	public function addCsFile(csFile:String):Bool
 	{
 		var meta = csFile + '.meta';
 		if (!exists(meta))
 		{
 			trace('META DOES NOT EXIST!!!');
-			return;
+			return false;
 		}
 
 		var path = getPassPath(csFile),
@@ -137,10 +146,12 @@ class MetaHandler
 			if (!exists(to))
 				copy(meta,to);
 			else
-				checkGuid(meta,to);
+				return checkGuid(meta,to);
 		} else {
 			trace('not found path',csFile);
 		}
+
+		return false;
 	}
 
 	private function getPassPath(file:String):String
