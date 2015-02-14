@@ -18,6 +18,14 @@ class HaxeCompiler implements IMessageContainer
 		messages = [];
 	}
 
+	dynamic public function clearConsole()
+	{
+	}
+
+	dynamic public function markDirty()
+	{
+	}
+
 	public function getMessages()
 	{
 		return messages;
@@ -69,6 +77,8 @@ class HaxeCompiler implements IMessageContainer
 
 	public function compile(args:Array<String>, verbose=false):Bool
 	{
+		var hadError = messages.length > 0;
+		if (hadError) clearConsole();
 		messages = [];
 		var cmd = new Process('haxe',args);
 
@@ -118,6 +128,9 @@ class HaxeCompiler implements IMessageContainer
 					error(message, pos);
 			}
 		}
+
+		if (messages.length > 0)
+			markDirty();
 		return ret;
 	}
 

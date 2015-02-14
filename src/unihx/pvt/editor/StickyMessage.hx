@@ -9,6 +9,7 @@ import unihx.pvt.IMessageContainer;
 	static var containers:Array<IMessageContainer> = [];
 
 	static var lastCount = -1;
+	static var dirty = false;
 	static function __init__()
 	{
 		unityeditor.EditorApplication.update += function() {
@@ -16,10 +17,15 @@ import unihx.pvt.IMessageContainer;
 		};
 	}
 
+	public static function markDirty()
+	{
+		dirty = true;
+	}
+
 	public static function update()
 	{
 		var count = getCount();
-		if (count < lastCount || count == 0)
+		if (count < lastCount || count == 0 || dirty)
 		{
 			var showAll = count == 0;
 
@@ -34,6 +40,7 @@ import unihx.pvt.IMessageContainer;
 			}
 		}
 		lastCount = count;
+		dirty = false;
 	}
 
 	public static function showMessage(msg:Message)
