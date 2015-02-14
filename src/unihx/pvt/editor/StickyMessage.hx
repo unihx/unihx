@@ -12,9 +12,7 @@ import unihx.pvt.IMessageContainer;
 	static var dirty = false;
 	static function __init__()
 	{
-		unityeditor.EditorApplication.update += function() {
-			update();
-		};
+		unityeditor.EditorApplication.update += update;
 	}
 
 	public static function markDirty()
@@ -70,11 +68,11 @@ import unihx.pvt.IMessageContainer;
 	public static function clearConsole()
 	{
 		var assembly = cs.system.reflection.Assembly.GetAssembly(cs.Lib.toNativeType(unityeditor.Editor));
-		if (assembly == null) return -1;
+		if (assembly == null) return;
 		var cls:Dynamic = assembly.GetType("UnityEditorInternal.LogEntries");
-		if (cls == null) return -1;
+		if (cls == null) return;
 
-		return cls.Clear();
+		cls.Clear();
 	}
 
 	static function getCount():Int
