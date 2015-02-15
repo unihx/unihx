@@ -139,7 +139,7 @@ class Helper extends CommandLine
 }
 
 /**
-	unihx init [target-dir] : initializes the target Unity project to use unihx.
+	unihx init [target-dir] : initializes or updates the target Unity project to use unihx.
 **/
 class InitCmd extends Cli
 {

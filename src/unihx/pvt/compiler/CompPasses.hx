@@ -47,7 +47,8 @@ class CompPasses
 		// in the future we may support to build only what changed;
 		// will need DCE off and a new way to deal with FieldLookup
 		var compileOnlyChanges = false;
-		var toRemove = [],
+		var toRemoveFiles = [],
+		    toRemoveEditor = [],
 		    dlls = [];
 		var first = true;
 
@@ -67,6 +68,9 @@ class CompPasses
 
 		for (pass in this)
 		{
+			var isEditor = pass.name.endsWith('editor');
+			var toRemove = isEditor ? toRemoveEditor : toRemoveFiles;
+
 			var curArgs = [];
 			var changed = pass.changedFiles;
 			if (changed.length > 0)
@@ -77,7 +81,12 @@ class CompPasses
 				dlls.push(dll);
 
 			if (canSkip) continue;
-			for (r in toRemove)
+			for (r in toRemoveFiles)
+			{
+				curArgs.push('--macro');
+				curArgs.push('remove("$r")');
+			}
+			if (isEditor) for (r in toRemoveEditor)
 			{
 				curArgs.push('--macro');
 				curArgs.push('remove("$r")');
