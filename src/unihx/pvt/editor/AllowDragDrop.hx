@@ -30,7 +30,7 @@ class AllowDragDrop extends Editor
 			}
 
 			var path = AssetDatabase.GetAssetPath(DragAndDrop.objectReferences[0]);
-			if (path.endsWith('.hx'))
+			if (path.endsWith('.hx') && Std.is(_target, GameObject))
 			{
 				var last = GUI.color;
 				GUI.color = new Color(164 / 255, 211 / 255, 237 / 255, 0.5);
