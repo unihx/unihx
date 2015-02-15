@@ -32,12 +32,15 @@ class MetaHandler
 		    fullTo = fullPath(to);
 		var oldModule = fromPass.fileMap[fullFrom],
 		    newModule = HaxeServices.getModule(to);
-		var fromMetaPath = basePath + '/../Unihx/Metas/' + fromPass.name + '/' + oldModule.replace('.','/') + '.cs.metahx';
+		var fromMetaPath = metaFolder + '/' + fromPass.name + '/' + oldModule.replace('.','/') + '.cs.metahx';
 		if (exists(fromMetaPath))
 		{
-			var toMetaPath = basePath + '/../Unihx/Metas/' + toPass.name + '/' + newModule.replace('.','/') + '.cs.metahx';
-			copy(fromMetaPath,toMetaPath);
-			deleteFile(fromMetaPath);
+			var toMetaPath = metaFolder + '/' + toPass.name + '/' + newModule.replace('.','/') + '.cs.metahx';
+			if (fromMetaPath != toMetaPath)
+			{
+				copy(fromMetaPath,toMetaPath);
+				deleteFile(fromMetaPath);
+			}
 		}
 	}
 
