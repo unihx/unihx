@@ -24,6 +24,46 @@ class HxInspector extends Editor
 		Repaint();
 	}
 
+	public static function HxmlOnGUI(prop:HxmlProps)
+	{
+		GUI.enabled = true;
+		// scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
+		prop.OnGUI();
+		// GUILayout.EndScrollView();
+
+		GUILayout.Space(3);
+		var buttonLayout = new cs.NativeArray(1);
+		buttonLayout[0] = GUILayout.MinHeight(33);
+		if (GUILayout.Button("Save",buttonLayout))
+		{
+			prop.save();
+		}
+		GUILayout.Space(3);
+		if (GUILayout.Button("Reload",buttonLayout))
+		{
+			prop.reload();
+		}
+		GUILayout.Space(3);
+		if (GUILayout.Button("Force Recompilation",buttonLayout))
+		{
+			Globals.chain.compile(true);
+			unityeditor.AssetDatabase.Refresh();
+		}
+
+		var warns = prop.getWarnings();
+		if (warns.length > 0)
+		{
+			GUILayout.Space(15);
+			for (w in warns)
+			{
+				GUILayout.BeginHorizontal(s_helpBox, new cs.NativeArray(0));
+				GUILayout.Label('', s_entryWarn, new cs.NativeArray(0));
+				GUILayout.Label(w.msg, s_txtWarn, new cs.NativeArray(0));
+				GUILayout.EndHorizontal();
+			}
+		}
+	}
+
 	@:overload override public function OnInspectorGUI()
 	{
 		if (s_helpBox == null)
@@ -45,42 +85,7 @@ class HxInspector extends Editor
 				{
 					this.prop = Globals.chain.hxml;
 				}
-				GUI.enabled = true;
-				// scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
-				prop.OnGUI();
-				// GUILayout.EndScrollView();
-
-				GUILayout.Space(3);
-				var buttonLayout = new cs.NativeArray(1);
-				buttonLayout[0] = GUILayout.MinHeight(33);
-				if (GUILayout.Button("Save",buttonLayout))
-				{
-					prop.save();
-				}
-				GUILayout.Space(3);
-				if (GUILayout.Button("Reload",buttonLayout))
-				{
-					prop.reload();
-				}
-				GUILayout.Space(3);
-				if (GUILayout.Button("Force Recompilation",buttonLayout))
-				{
-					Globals.chain.compile(true);
-					unityeditor.AssetDatabase.Refresh();
-				}
-
-				var warns = this.prop.getWarnings();
-				if (warns.length > 0)
-				{
-					GUILayout.Space(15);
-					for (w in warns)
-					{
-						GUILayout.BeginHorizontal(s_helpBox, new cs.NativeArray(0));
-						GUILayout.Label('', s_entryWarn, new cs.NativeArray(0));
-						GUILayout.Label(w.msg, s_txtWarn, new cs.NativeArray(0));
-						GUILayout.EndHorizontal();
-					}
-				}
+				HxmlOnGUI(this.prop);
 				Repaint();
 
 			case 'hx' | 'hxml':
