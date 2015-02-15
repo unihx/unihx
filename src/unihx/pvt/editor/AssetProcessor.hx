@@ -32,11 +32,14 @@ using StringTools;
 				anyChange = metas.addCsFile(str) || anyChange;
 		}
 
+		var i = -1;
 		for (str in movedAssets)
 		{
-			if (str.endsWith(".hx"))
+			++i;
+			if (str.endsWith(".hx")) {
 				passes.addSource(str);
-			else if (str.endsWith(".dll"))
+				metas.moveHxSource(movedFromAssetPaths[i], movedAssets[i]);
+			} else if (str.endsWith(".dll"))
 				passes.addDll(str);
 			else if (str.endsWith(".cs"))
 				anyChange = metas.addCsFile(str) || anyChange;

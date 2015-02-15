@@ -24,6 +24,23 @@ class MetaHandler
 		this.paths = [ for (p in passes) fullPath(basePath + '/' + p.getCompilePath() + '/src').toLowerCase() => p ];
 	}
 
+	public function moveHxSource(from:String, to:String)
+	{
+		var fromPass = passes.getPass(from),
+		    toPass = passes.getPass(to);
+		var fullFrom = fullPath(from),
+		    fullTo = fullPath(to);
+		var oldModule = fromPass.fileMap[fullFrom],
+		    newModule = HaxeServices.getModule(to);
+		var fromMetaPath = basePath + '/../Unihx/Metas/' + fromPass.name + '/' + oldModule.replace('.','/') + '.cs.metahx';
+		if (exists(fromMetaPath))
+		{
+			var toMetaPath = basePath + '/../Unihx/Metas/' + toPass.name + '/' + newModule.replace('.','/') + '.cs.metahx';
+			copy(fromMetaPath,toMetaPath);
+			deleteFile(fromMetaPath);
+		}
+	}
+
 	public function checkAll():Bool
 	{
 		var anyChange = false;
