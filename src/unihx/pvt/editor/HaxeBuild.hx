@@ -2,13 +2,12 @@ package unihx.pvt.editor;
 import unityengine.*;
 import unityeditor.*;
 
-@:nativeGen @:native("HaxeBuild") class HaxeBuild extends EditorWindow
+@:nativeGen class HaxeBuild extends EditorWindow
 {
-	@:meta(UnityEditor.MenuItem("Window/Haxe Build Properties"))
+	@:meta(UnityEditor.MenuItem("Window/Haxe Build Properties %&h"))
 	static function init()
 	{
-		var window:HaxeBuild = ScriptableObject.CreateInstance();
-		window.Show();
+		var window:HaxeBuild = cast EditorWindow.GetWindow( cs.Lib.toNativeType(HaxeBuild), false, "build.hxml", true );
 	}
 
 	function OnGUI()
