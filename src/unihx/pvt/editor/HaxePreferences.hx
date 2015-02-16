@@ -6,12 +6,12 @@ import unityeditor.*;
 class HaxePreferences implements InspectorBuild
 {
 	private static var current = new HaxePreferences().reload();
-	private static var last:Array<Bool>;
 
 	@:meta(UnityEditor.PreferenceItem("Haxe Preferences"))
 	public static function PreferencesGUI()
 	{
-		if (last == null) last = [ for (v in current.haxeCompilers) v.selected ];
+		var lastS = [ for (v in current.haxeCompilers) v.selected ];
+		var lastP = [ for (v in current.haxeCompilers) v.path ];
 		current.OnGUI();
 
 		if (GUI.changed)
@@ -28,14 +28,22 @@ class HaxePreferences implements InspectorBuild
 						if (v != cur) v.selected = false;
 			}
 
-			last = [ for (v in current.haxeCompilers) v.selected ];
+			//check paths' validity
+
+			EditorPrefs.SetString("Unihx_Haxe_Compilers", haxe.Serializer.run(current.haxeCompilers));
 		}
 	}
 
 	/**
-		Selects what kind of data
+		Adds and selects the haxe compiler path to be used
 	 **/
 	public var haxeCompilers:Array<{ path:DirPath, selected:Bool }>;
+
+	/**
+		If an embedded Haxe compiler is found in the project, use it instead of the system compiler
+		@label Use embedded compiler if found
+	 **/
+	public var useEmbedded:Bool = true;
 
 	public function new()
 	{
@@ -43,6 +51,27 @@ class HaxePreferences implements InspectorBuild
 
 	public function reload():HaxePreferences
 	{
+		if (EditorPrefs.HasKey("Unihx_Haxe_Compilers"))
+			this.haxeCompilers = haxe.Unserializer.run(EditorPrefs.GetString("Unihx_Haxe_Compilers"));
+		else
+			this.haxeCompilers = defaultCompiler();
+		this.useEmbedded
+
 		return this;
+	}
+
+	private static function defaultCompiler()
+	{
+		var ret = [];
+
+		var paths = if (Sys.systemName() == "Windows")
+				Sys.getEnv("PATH").split(';');
+			else
+				Sys.getEnv("PATH").split(':');
+
+		for (p in paths)
+		{
+		}
+		return ret;
 	}
 }
