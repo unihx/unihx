@@ -304,7 +304,10 @@ class InspectorMacro
 		switch(t)
 		{
 			case TPath(p):
-				switch [p.pack, p.name]
+				var pack = p.pack, name = p.name;
+				if (pack.length == 0 && name == 'StdTypes')
+					name = p.sub;
+				switch [pack, name]
 				{
 					case [ [], 'Int' | 'Float' | 'Single' ]:
 						return macro @:pos(pos) 0;
@@ -328,14 +331,22 @@ class InspectorMacro
 			case TAnonymous(fields) | TExtend(_,fields):
 				return { expr:EObjectDecl([for (f in fields) switch(f.kind) {
 					case FVar(t,e):
-						{ field: f.name, expr: e == null ? getDefault(t,f.pos,true) : e };
+						{ field: f.name, expr: isNull(e) ? getDefault(t,f.pos,true) : e };
 					case FProp(get,set,t,e):
-						{ field: f.name, expr: e == null ? getDefault(t,f.pos,true) : e };
+						{ field: f.name, expr: isNull(e) ? getDefault(t,f.pos,true) : e };
 					case _:
-						{ field: f.name, expr: macro null };
+						{ field: f.name, expr: macro cast null };
 				} ]), pos:pos };
 			case TFunction(_,_), TParent(_), TOptional(_):
-				return forceExpr ? macro @:pos(pos) null : null;
+				return forceExpr ? macro @:pos(pos) cast null : null;
+		}
+	}
+
+	private static function isNull(e:Expr)
+	{
+		return e == null || switch(e.expr) {
+			case EConst(CIdent('null')): true;
+			case _: false;
 		}
 	}
 
@@ -718,6 +729,40 @@ class InspectorCall
 				block.push(macro $efield = unityeditor.EditorGUILayout.TagField($guiContent, $efield, $opts));
 			case [['unihx','inspector'],'TextArea']:
 				block.push(macro $efield = unityeditor.EditorGUILayout.TextArea($efield, $opts));
+			case [['unihx','inspector'],'DirPath' | 'FilePath']:
+				var funcName = null, sndArg = null;
+				if (name == 'DirPath')
+				{
+					funcName = 'OpenFolderPanel';
+				} else {
+					funcName = 'OpenFilePanel';
+					sndArg = docs.get('filter');
+				}
+				if (sndArg == null) sndArg = '';
+
+				block.push(macro unityeditor.EditorGUILayout.BeginHorizontal(null));
+				var title = docs.get('label');
+				if (title == null)
+					title = toSep(field.name, ' '.code);
+				block.push(macro
+						unityeditor.EditorGUILayout.PrefixLabel($guiContent,
+							untyped "Button"
+				));
+
+				var tooltip = docs[''];
+				var btnGuiContent = if (tooltip == null)
+					macro new unityengine.GUIContent("<" + $efield + ">");
+				else
+					macro new unityengine.GUIContent("<" + $efield + ">", $v{tooltip});
+
+				block.push(macro {
+					var rect = unityengine.GUILayoutUtility.GetRect(new unityengine.GUIContent(""), untyped "Button");
+					if (unityengine.GUI.Button(rect,$btnGuiContent))
+					{
+						$efield = unityeditor.EditorUtility.$funcName($v{title}, $efield, $v{sndArg});
+					}
+				});
+				block.push(macro unityeditor.EditorGUILayout.EndHorizontal());
 			// case [['unihx','inspector'],'Button']:
 			// 	var e = macro $efield = unityengine.GUILayout.Button($guiContent, $opts);
 			// 	if (docs['onclick'] != null)
