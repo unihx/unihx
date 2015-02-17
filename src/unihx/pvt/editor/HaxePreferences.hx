@@ -2,6 +2,7 @@ package unihx.pvt.editor;
 import unihx.inspector.*;
 import unityengine.*;
 import unityeditor.*;
+import sys.FileSystem.*;
 
 class HaxePreferences implements InspectorBuild
 {
@@ -22,15 +23,15 @@ class HaxePreferences implements InspectorBuild
 				var cur = val[i];
 				if (cur == null) break;
 
-				var v1 = cur.selected, v2 = last[i];
+				var v1 = cur.selected, v2 = lastS[i];
 				if (v1 && !v2)
 					for (v in val)
 						if (v != cur) v.selected = false;
 			}
 
 			//check paths' validity
-
 			EditorPrefs.SetString("Unihx_Haxe_Compilers", haxe.Serializer.run(current.haxeCompilers));
+			EditorPrefs.SetBool("Unihx_Use_Embedded", current.useEmbedded);
 		}
 	}
 
@@ -53,9 +54,13 @@ class HaxePreferences implements InspectorBuild
 	{
 		if (EditorPrefs.HasKey("Unihx_Haxe_Compilers"))
 			this.haxeCompilers = haxe.Unserializer.run(EditorPrefs.GetString("Unihx_Haxe_Compilers"));
-		else
+
+		if (this.haxeCompilers == null || this.haxeCompilers.length == 0)
+		{
 			this.haxeCompilers = defaultCompiler();
-		this.useEmbedded
+			EditorPrefs.SetString("Unihx_Haxe_Compilers", haxe.Serializer.run(this.haxeCompilers));
+		}
+		this.useEmbedded = EditorPrefs.GetBool("Unihx_Use_Embedded",true);
 
 		return this;
 	}
@@ -63,15 +68,27 @@ class HaxePreferences implements InspectorBuild
 	private static function defaultCompiler()
 	{
 		var ret = [];
+		var paths, file;
 
-		var paths = if (Sys.systemName() == "Windows")
-				Sys.getEnv("PATH").split(';');
-			else
-				Sys.getEnv("PATH").split(':');
+		if (Sys.systemName() == "Windows")
+		{
+			paths = Sys.getEnv("PATH").split(';');
+			file = 'haxe.exe';
+		} else {
+			paths = Sys.getEnv("PATH").split(':');
+			file = 'haxe';
+		}
 
+		var first = true;
 		for (p in paths)
 		{
+			if (exists('$p/$file'))
+			{
+				ret.push({ path: p, selected: first });
+				first = false;
+			}
 		}
+
 		return ret;
 	}
 }
