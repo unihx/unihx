@@ -18,6 +18,14 @@ using StringTools;
 		haxe.Log.trace(str,null);
 	}
 
+	public function runOrWarn(args:Array<String>)
+	{
+		var ret = run(args);
+		if (ret.exit != 0)
+			warn('Haxelib operation failed while running $args:\n${ret.out + '\n' + ret.err}');
+		return ret.exit == 0;
+	}
+
 	function setLibPath(path)
 	{
 		this.libPath = path;
@@ -43,7 +51,7 @@ using StringTools;
 			});
 		}
 
-		warn('Haxelib operation failed: ${ret.out +'\n' + ret.err}');
+		warn('Haxelib operation failed:\n${ret.out +'\n' + ret.err}');
 		return [];
 	}
 
@@ -52,7 +60,7 @@ using StringTools;
 		var ret = run(['install',libname]);
 		if (ret.exit != 0)
 		{
-			warn('install failed: ${ret.out +'\n' + ret.err}');
+			warn('install failed:\n${ret.out +'\n' + ret.err}');
 		}
 	}
 
@@ -61,11 +69,11 @@ using StringTools;
 		var ret = run(['remove',libname]);
 		if (ret.exit != 0)
 		{
-			warn('remove failed: ${ret.out + '\n' + ret.err}');
+			warn('remove failed:\n${ret.out + '\n' + ret.err}');
 		}
 	}
 
-	public function run(args:Array<String>):{ exit:Int, out:String, err:String }
+	private function getPath()
 	{
 		var compilerPath = compiler.compilerPath,
 		    proc = 'haxelib';
@@ -84,7 +92,12 @@ using StringTools;
 				proc = 'haxelib';
 			}
 		}
+		return proc;
+	}
 
+	public function run(args:Array<String>):{ exit:Int, out:String, err:String }
+	{
+		var proc = getPath();
 		return Utils.runProcess(proc,args);
 	}
 }
