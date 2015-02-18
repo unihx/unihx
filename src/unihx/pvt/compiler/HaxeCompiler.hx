@@ -2,16 +2,18 @@ package unihx.pvt.compiler;
 
 import Std.*;
 import sys.io.Process;
+import sys.FileSystem.*;
 import unityengine.*;
 import unihx.pvt.IMessageContainer;
 
 using StringTools;
 
-class HaxeCompiler implements IMessageContainer
+@:allow(unihx.pvt.compiler) class HaxeCompiler implements IMessageContainer
 {
 	var port:Int;
 	var process:Process;
 	var messages:Array<Message>;
+	var compilerPath:Null<String>;
 
 	public function new()
 	{
@@ -24,6 +26,26 @@ class HaxeCompiler implements IMessageContainer
 
 	dynamic public function markDirty()
 	{
+	}
+
+	function setCompilerPath(path:String)
+	{
+		if (!exists(path))
+		{
+			trace('Haxe compiler path $path does not exist!');
+			path = null;
+		}
+
+		if (path == null || !exists('$path/std'))
+		{
+			if (Sys.getEnv('HAXE_STD_PATH') != null)
+				Sys.putEnv('HAXE_STD_PATH',null);
+		} else {
+			Sys.putEnv('HAXE_STD_PATH','$path/std');
+		}
+		Sys.putEnv('HAXEPATH',path);
+
+		compilerPath = path;
 	}
 
 	public function getMessages()
@@ -80,14 +102,37 @@ class HaxeCompiler implements IMessageContainer
 		var hadError = messages.length > 0;
 		if (hadError) clearConsole();
 		messages = [];
-		var cmd = new Process('haxe',args);
+		var proc = 'haxe';
+		var lastPath = null;
+		if (compilerPath != null)
+		{
+			lastPath = Sys.getEnv('PATH');
+			if (Sys.systemName() == "Windows")
+			{
+				proc = '$compilerPath/haxe.exe';
+				Sys.putEnv('PATH','${fullPath(compilerPath)};$lastPath');
+			} else {
+				proc = '$compilerPath/haxe';
+				Sys.putEnv('PATH','${fullPath(compilerPath)}:$lastPath');
+			}
+			if (!exists(proc))
+			{
+				trace('Internal error: compiler path chosen "$compilerPath" does not exist');
+				warn('Internal error: compiler path chosen "$compilerPath" does not exist', null);
+				proc = 'haxe';
+			}
+		}
+
+		var cmd = Utils.runProcess(proc,args);
+		if (lastPath != null)
+			Sys.putEnv('PATH',lastPath);
 
 		var ret = true;
 		if (cmd != null)
 		{
 			var sw = new cs.system.diagnostics.Stopwatch();
 			sw.Start();
-			if (cmd.exitCode() != 0)
+			if (cmd.exit != 0)
 			{
 				ret = false;
 				error('Haxe compilation failed');
@@ -97,13 +142,13 @@ class HaxeCompiler implements IMessageContainer
 			{
 				Debug.Log('Compilation ended (' + sw.Elapsed.Seconds + "." + sw.Elapsed.Milliseconds + ")" );
 			}
-			for (ln in cmd.stdout.readAll().toString().trim().split('\n'))
+			for (ln in cmd.out.split('\n'))
 			{
 				var ln = ln.trim();
 				if (ln != "")
 					Debug.Log(ln);
 			}
-			for (ln in cmd.stderr.readAll().toString().trim().split('\n'))
+			for (ln in cmd.err.split('\n'))
 			{
 				var ln = ln.trim();
 

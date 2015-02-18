@@ -23,13 +23,24 @@ class HaxePreferences implements InspectorBuild
 				var cur = val[i];
 				if (cur == null) break;
 
+				// handle selected
 				var v1 = cur.selected, v2 = lastS[i];
 				if (v1 && !v2)
 					for (v in val)
 						if (v != cur) v.selected = false;
+
 			}
 
 			//check paths' validity
+			var name = Sys.systemName() == 'Windows' ? 'haxe.exe' : 'haxe';
+			current.haxeCompilers = current.haxeCompilers.filter(function(c)
+				return if (c != null && c.path != null && !exists('${c.path}/$name'))
+				{
+					EditorUtility.DisplayDialog('Haxe Compiler not found','No haxe compiler executable ($name) was found at ${c.path}', 'OK');
+					false;
+				} else true
+			);
+
 			EditorPrefs.SetString("Unihx_Haxe_Compilers", haxe.Serializer.run(current.haxeCompilers));
 			EditorPrefs.SetBool("Unihx_Use_Embedded", current.useEmbedded);
 		}
