@@ -1,4 +1,6 @@
 package unihx.pvt.editor;
+import unityengine.*;
+import unityeditor.*;
 import unihx.pvt.compiler.*;
 
 /**
@@ -37,6 +39,9 @@ class Globals
 		chain = new CompileChain(hxml);
 		chain.compiler.clearConsole = function() StickyMessage.clearConsole();
 		chain.compiler.markDirty = function() StickyMessage.markDirty();
+		chain.haxelib.warn = function(msg:String) {
+			EditorUtility.DisplayDialog('Haxelib error',msg, 'OK');
+		};
 
 		if (chain.metas.checkAll())
 			unityeditor.AssetDatabase.Refresh();

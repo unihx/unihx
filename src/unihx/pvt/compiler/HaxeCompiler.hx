@@ -18,6 +18,7 @@ using StringTools;
 	public function new()
 	{
 		messages = [];
+		port = 0;
 	}
 
 	dynamic public function clearConsole()
@@ -30,6 +31,7 @@ using StringTools;
 
 	function setCompilerPath(path:String)
 	{
+		var changed = (compilerPath != path);
 		if (!exists(path))
 		{
 			trace('Haxe compiler path $path does not exist!');
@@ -44,6 +46,9 @@ using StringTools;
 			Sys.putEnv('HAXE_STD_PATH','$path/std');
 		}
 		Sys.putEnv('HAXEPATH',path);
+
+		if (changed && process != null && port != 0)
+			newProcess(this.port);
 
 		compilerPath = path;
 	}
