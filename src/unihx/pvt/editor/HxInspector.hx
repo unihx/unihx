@@ -38,6 +38,7 @@ class HxInspector extends Editor
 		}
 
 		GUI.enabled = true;
+		GUILayout.Space(6);
 		// scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
 		prop.OnGUI();
 		// GUILayout.EndScrollView();

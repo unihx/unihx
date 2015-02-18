@@ -52,7 +52,6 @@ import unityeditor.*;
 	{
 		var name = new haxe.io.Path(pathName).file;
 		name = name.charAt(0).toUpperCase() + name.substr(1);
-		pathName = haxe.io.Path.directory(pathName) + '/$name.hx';
 		sys.io.File.saveContent(pathName,
 'import unityengine.*;
 
