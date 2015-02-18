@@ -29,6 +29,10 @@ using StringTools;
 	{
 	}
 
+	dynamic public function onAfterCompile(success:Bool)
+	{
+	}
+
 	function setCompilerPath(path:String)
 	{
 		var changed = (compilerPath != path);
@@ -181,6 +185,8 @@ using StringTools;
 
 		if (messages.length > 0)
 			markDirty();
+
+		onAfterCompile(ret);
 		return ret;
 	}
 
