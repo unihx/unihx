@@ -115,12 +115,12 @@ import unityeditor.*;
 		}
 		GUILayout.EndVertical();
 
-		GUILayout.Space(3);
-		if (GUILayout.Button("Upgrade",buttonLayout))
-		{
-			Globals.chain.haxelib.runOrWarn(['upgrade']);
-			reload();
-		}
+		// GUILayout.Space(3);
+		// if (GUILayout.Button("Upgrade",buttonLayout))
+		// {
+		// 	Globals.chain.haxelib.runOrWarn(['upgrade']);
+		// 	reload();
+		// }
 
 		GUILayout.Space(3);
 		if (GUILayout.Button("Refresh",buttonLayout))
