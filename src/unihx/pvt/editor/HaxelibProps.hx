@@ -10,6 +10,7 @@ import unityeditor.*;
 	var lib:String;
 	var cmd:String;
 	var cmdShow:String;
+	var scroll:Vector2;
 
 	var installing = false;
 
@@ -41,6 +42,7 @@ import unityeditor.*;
 			// trace(s_libs.margin);
 		}
 
+		scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));
 		GUILayout.Space(6);
 		GUILayout.Label('Installed libraries:', new cs.NativeArray(0));
 		EditorGUI.indentLevel++;
@@ -90,7 +92,7 @@ import unityeditor.*;
 			GUI.enabled = false;
 			EditorGUILayout.TextArea(cmdShow, s_box, new cs.NativeArray(0));
 			GUI.enabled = true;
-			cmd = EditorGUILayout.TextField('Command',cmd,new cs.NativeArray(0));
+			cmd = EditorGUILayout.TextField('haxelib',cmd,new cs.NativeArray(0));
 			var rect = GUILayoutUtility.GetRect(new GUIContent('OK'), s_btn);
 			rect = rect.with({ x: rect.x + rect.width - 35, width: 35 });
 			if (GUI.Button(rect, 'OK'))
@@ -104,6 +106,7 @@ import unityeditor.*;
 					cmdShow = "Command failed:\n" + c.err + "\n" + c.out;
 				}
 				EditorUtility.ClearProgressBar();
+				reload();
 			}
 			if (GUI.Button(rect.with({ x: rect.x - 47, width: 45 }), 'Reset'))
 			{
@@ -112,7 +115,10 @@ import unityeditor.*;
 			EditorGUI.indentLevel--;
 			GUILayout.Space(6);
 
+		} else {
+			cmdShow = '';
 		}
+
 		GUILayout.EndVertical();
 
 		// GUILayout.Space(3);
@@ -127,5 +133,7 @@ import unityeditor.*;
 		{
 			reload();
 		}
+
+		GUILayout.EndScrollView();
 	}
 }
