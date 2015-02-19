@@ -204,6 +204,7 @@ class InitCmd extends Cli
 		print("Compiling bootstrap code...");
 
 		var args = ['--cwd',assets,'-cs','../Temp/Unihx/unihx-bootstrap','-D','dll','--macro','include("unihx.pvt.editor")','-debug'];
+		hxml.libraries = [];
 		hxml.getArguments(args);
 
 		callHaxe(args);
