@@ -57,12 +57,14 @@ class CompPasses
 			var skip = true;
 			for (pass in this)
 			{
+				// trace(pass.changedFiles);
 				if (pass.changedFiles.length != 0)
 				{
 					skip = false;
 					break;
 				}
 			}
+			// trace(skip);
 			if (skip) return false;
 		}
 

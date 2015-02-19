@@ -32,14 +32,11 @@ import unityeditor.*;
 	{
 		if (s_libs == null)
 		{
-			// s_libs = untyped "CN Box";
 			s_libs = new GUIStyle(untyped 'HelpBox');
 
 			s_box = new GUIStyle(untyped 'HelpBox');
 			s_box.margin = new RectOffset(0,0,0,0);
 			s_box.padding = new RectOffset(0,0,0,0);
-			// s_libs.margin.top = 0;
-			// trace(s_libs.margin);
 		}
 
 		scroll = GUILayout.BeginScrollView(scroll, new cs.NativeArray(0));

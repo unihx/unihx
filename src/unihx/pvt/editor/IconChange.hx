@@ -12,8 +12,7 @@ using StringTools;
 		var dir = 'Assets/Editor Default Resources/Unihx';
 		if (exists(dir))
 		{
-			var next:unityeditor.EditorApplication.EditorApplication_CallbackFunction = null;
-			next = function()
+			EditorUtils.runNextFrame(function()
 			{
 				for (file in readDirectory(dir)) if (file.endsWith('.png'))
 				{
@@ -24,9 +23,7 @@ using StringTools;
 					importer.filterMode = FilterMode.Trilinear;
 					AssetDatabase.ImportAsset('$dir/$file');
 				}
-				unityeditor.EditorApplication.update -= next;
-			};
-			unityeditor.EditorApplication.update += next;
+			});
 		}
 
 		unityeditor.EditorApplication.projectWindowItemOnGUI += function(s:String, r:Rect) {

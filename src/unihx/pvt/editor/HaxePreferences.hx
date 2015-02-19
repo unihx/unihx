@@ -43,7 +43,13 @@ class HaxePreferences implements InspectorBuild
 
 			EditorPrefs.SetString("Unihx_Haxe_Compilers", haxe.Serializer.run(current.haxeCompilers));
 			EditorPrefs.SetBool("Unihx_Use_Embedded", current.useEmbedded);
+			current.reload();
 		}
+	}
+
+	public static function forceReload()
+	{
+		current.reload();
 	}
 
 	/**
@@ -72,6 +78,19 @@ class HaxePreferences implements InspectorBuild
 			EditorPrefs.SetString("Unihx_Haxe_Compilers", haxe.Serializer.run(this.haxeCompilers));
 		}
 		this.useEmbedded = EditorPrefs.GetBool("Unihx_Use_Embedded",true);
+
+		if (this.haxeCompilers != null)
+		{
+			for (hx in this.haxeCompilers)
+			{
+				if (hx.selected)
+				{
+					Globals.chain.setHaxePath(hx.path);
+					break;
+				}
+			}
+		}
+		Globals.chain.setUseEmbedded(this.useEmbedded);
 
 		return this;
 	}

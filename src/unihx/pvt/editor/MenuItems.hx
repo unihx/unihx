@@ -14,7 +14,7 @@ import unityeditor.*;
 	@:meta(UnityEditor.MenuItem("Window/Unihx/Haxelib Properties"))
 	static function lib()
 	{
-		var window:HaxelibProps = cast EditorWindow.GetWindow( cs.Lib.toNativeType(HaxelibProps), false, "Haxelib", true );
+		var window:HaxelibProps = cast EditorWindow.GetWindow( cs.Lib.toNativeType(HaxelibProps), false, "haxelib", true );
 	}
 
 	@:meta(UnityEditor.MenuItem("Window/Unihx/Force Recompilation %F5"))

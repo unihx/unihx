@@ -55,13 +55,15 @@ using StringTools;
 		return [];
 	}
 
-	public function install(libname:String)
+	public function install(libname:String):Bool
 	{
 		var ret = run(['install',libname]);
 		if (ret.exit != 0)
 		{
 			warn('install failed:\n${ret.out +'\n' + ret.err}');
+			return false;
 		}
+		return true;
 	}
 
 	public function remove(libname:String)
@@ -70,7 +72,9 @@ using StringTools;
 		if (ret.exit != 0)
 		{
 			warn('remove failed:\n${ret.out + '\n' + ret.err}');
+			return false;
 		}
+		return true;
 	}
 
 	private function getPath()
@@ -98,6 +102,11 @@ using StringTools;
 	public function run(args:Array<String>):{ exit:Int, out:String, err:String }
 	{
 		var proc = getPath();
-		return Utils.runProcess(proc,args);
+		var lastPath = compiler.setPath().lastPath;
+		var ret = Utils.runProcess(proc,args);
+		if (lastPath != null)
+			Sys.putEnv('PATH',lastPath);
+
+		return ret;
 	}
 }

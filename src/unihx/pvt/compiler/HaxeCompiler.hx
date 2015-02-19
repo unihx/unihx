@@ -33,6 +33,18 @@ using StringTools;
 	{
 	}
 
+	dynamic public function onCompilerNotFound(path:Null<String>)
+	{
+		if (path != null)
+		{
+			trace('Internal error: compiler path chosen "$path" does not exist');
+			warn('Internal error: compiler path chosen "$path" does not exist', null);
+		} else {
+			trace('Internal error: no Haxe installation was found');
+			warn('Internal error: no Haxe installation was found', null);
+		}
+	}
+
 	function setCompilerPath(path:String)
 	{
 		var changed = (compilerPath != path);
@@ -106,19 +118,19 @@ using StringTools;
 		this.port = port;
 	}
 
-	public function compile(args:Array<String>, verbose=false):Bool
+	public function setPath():{ proc:String, lastPath:Null<String> }
 	{
-		var hadError = messages.length > 0;
-		if (hadError) clearConsole();
-		messages = [];
+		var lastPath = null,
+		    isWindows = Sys.systemName() == "Windows",
+		    path = Sys.getEnv('PATH');
 		var proc = 'haxe';
-		var lastPath = null;
 		if (compilerPath != null)
 		{
-			lastPath = Sys.getEnv('PATH');
-			if (Sys.systemName() == "Windows")
+			lastPath = path;
+			if (isWindows)
 			{
 				proc = '$compilerPath/haxe.exe';
+				trace('setting path, ${fullPath(compilerPath)};$lastPath');
 				Sys.putEnv('PATH','${fullPath(compilerPath)};$lastPath');
 			} else {
 				proc = '$compilerPath/haxe';
@@ -126,11 +138,42 @@ using StringTools;
 			}
 			if (!exists(proc))
 			{
-				trace('Internal error: compiler path chosen "$compilerPath" does not exist');
-				warn('Internal error: compiler path chosen "$compilerPath" does not exist', null);
+				this.onCompilerNotFound(compilerPath);
 				proc = 'haxe';
 			}
+		} else {
+			var paths = isWindows ? path.split(';') : path.split(':');
+			var found = false;
+			for (p in paths)
+			{
+				if (isWindows)
+				{
+					if (exists('$p/haxe.exe') || exists('$p/haxe.bat'))
+					{
+						found = true; break;
+					}
+				} else {
+					if (exists('$p/haxe'))
+					{
+						found = true; break;
+					}
+				}
+			}
+			if (!found)
+				this.onCompilerNotFound(null);
 		}
+		return { proc: proc, lastPath: lastPath };
+	}
+
+	public function compile(args:Array<String>, verbose=false):Bool
+	{
+		var hadError = messages.length > 0;
+		if (hadError) clearConsole();
+		messages = [];
+
+		var path = setPath();
+		var proc = path.proc,
+		    lastPath = path.lastPath;
 
 		var cmd = Utils.runProcess(proc,args);
 		if (lastPath != null)

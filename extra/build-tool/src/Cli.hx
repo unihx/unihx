@@ -98,7 +98,7 @@ class Cli extends CommandLine
 	{
 		if (unihxPath != null)
 			return unihxPath;
-		var p = new sys.io.Process('haxelib',['path','unihx']);
+		var p = try new sys.io.Process('haxelib',['path','unihx']) catch(e:Dynamic) null;
 		try
 		{
 			while(true)
@@ -114,7 +114,7 @@ class Cli extends CommandLine
 		catch(e:haxe.io.Eof)
 		{
 		}
-		if (p.exitCode() != 0 || unihxPath == null)
+		if (p == null || p.exitCode() != 0 || unihxPath == null)
 		{
 			err('Cannot determine the path of the "unihx" project. Make sure haxelib is installed correctly, and unihx is installed through haxelib');
 		}
