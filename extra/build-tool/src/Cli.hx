@@ -86,9 +86,14 @@ class Cli extends CommandLine
 		var args = Sys.args();
 		if (Sys.getEnv('HAXELIB_RUN') == "1")
 		{
-			unihxPath = Sys.getCwd();
 			var curpath = args.pop();
-			Sys.setCwd(curpath);
+			if (exists(curpath) && exists('extraParams.hxml') && exists('haxelib.json'))
+			{
+				unihxPath = Sys.getCwd();
+				Sys.setCwd(curpath);
+			} else {
+				args.push(curpath);
+			}
 		}
 		new mcli.Dispatch(args).dispatch(new Helper());
 	}
@@ -121,6 +126,28 @@ class Cli extends CommandLine
 
 		return unihxPath;
 	}
+
+	private function getAssets(dir:String):Null<String>
+	{
+		var full = fullPath(dir).split('\\').join('/').split('/');
+		while (full[full.length-1] == "")
+			full.pop();
+
+		var buf = new StringBuf();
+		buf.add(".");
+		while (full.length > 1)
+		{
+			var dir = full.join('/');
+			for (file in readDirectory(dir))
+			{
+				if (file == "Assets")
+					return buf + '/Assets';
+			}
+			buf.add('/..');
+			full.pop();
+		}
+		return null;
+	}
 }
 
 /**
@@ -136,6 +163,12 @@ class Helper extends CommandLine
 		d.dispatch(new InitCmd());
 	}
 
+	/**
+		Builds a
+	 **/
+	public function build(d:Dispatch)
+	{
+	}
 }
 
 /**
@@ -238,28 +271,6 @@ class InitCmd extends Cli
 			if (file.endsWith('.png'))
 				copy('$unihx/$file', '$assets/Editor Default Resources/Unihx/$file');
 		}
-	}
-
-	private function getAssets(dir:String):Null<String>
-	{
-		var full = fullPath(dir).split('\\').join('/').split('/');
-		while (full[full.length-1] == "")
-			full.pop();
-
-		var buf = new StringBuf();
-		buf.add(".");
-		while (full.length > 1)
-		{
-			var dir = full.join('/');
-			for (file in readDirectory(dir))
-			{
-				if (file == "Assets")
-					return buf + '/Assets';
-			}
-			buf.add('/..');
-			full.pop();
-		}
-		return null;
 	}
 
 }
