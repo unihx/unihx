@@ -130,7 +130,6 @@ using StringTools;
 			if (isWindows)
 			{
 				proc = '$compilerPath/haxe.exe';
-				trace('setting path, ${fullPath(compilerPath)};$lastPath');
 				Sys.putEnv('PATH','${fullPath(compilerPath)};$lastPath');
 			} else {
 				proc = '$compilerPath/haxe';
