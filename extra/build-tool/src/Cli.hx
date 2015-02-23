@@ -162,6 +162,36 @@ class Helper extends CommandLine
 	 **/
 	public function build(d:Dispatch)
 	{
+		d.dispatch(new BuildCmd());
+	}
+}
+
+/**
+	unihx build [target-dir] : builds the target unihx project
+ **/
+class BuildCmd extends Cli
+{
+	public function runDefault(targetDir:String=".")
+	{
+		if (targetDir == "")
+			targetDir = ".";
+
+		// look for 'Assets' folder
+		var assets = getAssets(targetDir);
+		if (assets == null)
+			err('Cannot find the Assets folder at "$targetDir"');
+
+		if (assets == "")
+			assets = ".";
+		if (!exists('$assets/build.hxml'))
+			err('Target project doesn\'t seem to use Unihx');
+
+		var hxml = new HxmlProps('$assets/build.hxml');
+		hxml.reload();
+		var passes = new CompPasses(assets);
+		var compiler = new HaxeCompiler();
+		if (!passes.compile(true,compiler,hxml))
+			Sys.exit(3);
 	}
 }
 
