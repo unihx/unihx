@@ -622,6 +622,7 @@ class YieldGenerator
 		if (!found)
 			return null;
 		var cases = [];
+
 		for (ctx in all)
 		{
 			var ids = ctx.ids,
