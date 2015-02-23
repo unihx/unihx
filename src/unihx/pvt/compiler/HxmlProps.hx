@@ -244,6 +244,8 @@ class HxmlProps implements InspectorBuild
 						advanced.errorPositions = HaxePositions;
 					case ['-D', 'cs-force-relative-pos']:
 						// ignore - not supported
+					case ['-D', 'no-compilation']:
+						// for now, ignore - this may be an old setting
 
 					case ['params.hxml',_]:
 						warnings.push({

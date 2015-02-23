@@ -135,24 +135,12 @@ class Cli extends CommandLine
 
 	private function getAssets(dir:String):Null<String>
 	{
-		var full = fullPath(dir).split('\\').join('/').split('/');
-		while (full[full.length-1] == "")
-			full.pop();
-
-		var buf = new StringBuf();
-		buf.add(".");
-		while (full.length > 1)
-		{
-			var dir = full.join('/');
-			for (file in readDirectory(dir))
-			{
-				if (file == "Assets")
-					return buf + '/Assets';
-			}
-			buf.add('/..');
-			full.pop();
-		}
-		return null;
+		if (exists('$dir/Assets'))
+			return '$dir/Assets';
+		else if (haxe.io.Path.directory(dir) == 'Assets')
+			return dir;
+		else
+			return null;
 	}
 }
 
@@ -170,7 +158,7 @@ class Helper extends CommandLine
 	}
 
 	/**
-		Builds a
+		Builds a project
 	 **/
 	public function build(d:Dispatch)
 	{
@@ -203,13 +191,15 @@ class InitCmd extends Cli
 						var module = pass.fileMap[path];
 						var pack = module.split('.');
 						var clsName = pack.pop();
+						var dir = haxe.io.Path.directory(path);
+						var p = '$dir/hx-compiled/$clsName.cs.meta';
 
-						if (exists('$path/hx-compiled/$clsName.cs.meta'))
+						if (exists(p))
 						{
 							// move the meta to the correct place
 							var out = '$metaFolder/${pass.name}/${pack.join("/")}';
 							if (!exists(out)) createDirectory(out);
-							rename('$path/hx-compiled/$clsName.cs.meta','$out/$clsName.cs.metahx');
+							rename(p,'$out/$clsName.cs.metahx');
 						}
 					}
 				}
@@ -302,10 +292,10 @@ class InitCmd extends Cli
 		}
 
 		// copy assets to Editor Default Resources
+		if (exists(assets + '/Editor Default Resources/unihx'))
+			deleteAll(assets + '/Editor Default Resources/unihx',true);
 		if (exists(assets + '/Editor Default Resources/Unihx'))
 			deleteAll(assets + '/Editor Default Resources/Unihx',false);
-		if (exists(assets + '/Editor Default Resources/unihx'))
-			deleteAll(assets + '/Editor Default Resources/unihx',false);
 
 		createDirectory(assets + '/Editor Default Resources/Unihx');
 		var unihx = this.getUnihxPath() + "/extra/assets/icons";
