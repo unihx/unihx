@@ -31,18 +31,24 @@ class Cli extends CommandLine
 			Sys.exit(ret);
 	}
 
-	private function deleteAll(dir:String)
+	private function deleteAll(dir:String, includeMetas:Bool):Bool
 	{
+		var all = true;
 		for (f in readDirectory(dir))
 		{
 			if (isDirectory('$dir/$f'))
 			{
-				deleteAll('$dir/$f');
+				all = deleteAll('$dir/$f',includeMetas) && all;
+			} else if (!includeMetas && f.endsWith('.meta')) {
+				all = false;
 			} else {
 				deleteFile('$dir/$f');
 			}
 		}
-		deleteDirectory(dir);
+
+		if (all)
+			deleteDirectory(dir);
+		return all;
 	}
 
 	private function copy(file:String, to:String)
@@ -185,14 +191,51 @@ class InitCmd extends Cli
 				&& ask("Please close your Unity Editor application and back up your project before continuing. Continue?")
 			)
 			{
-				// go through all folders
-				// if hx-compiled folder, save the meta files and delete the rest
-				// go through all Standard Assets/Haxe-Std and Editor/Haxe-Std and delete all files there as well
-				// build the project again and copy the meta files as needed
-				err('Not implemented yet');
+				var passes = new CompPasses(assets);
+				var metaFolder = '$assets/../Unihx/Metas';
+				if (!exists(metaFolder)) createDirectory(metaFolder);
+
+				// save all relevant metas from each pass
+				for (pass in passes)
+				{
+					for (path in pass.fileMap.keys())
+					{
+						var module = pass.fileMap[path];
+						var pack = module.split('.');
+						var clsName = pack.pop();
+
+						if (exists('$path/hx-compiled/$clsName.cs.meta'))
+						{
+							// move the meta to the correct place
+							var out = '$metaFolder/${pass.name}/${pack.join("/")}';
+							if (!exists(out)) createDirectory(out);
+							rename('$path/hx-compiled/$clsName.cs.meta','$out/$clsName.cs.metahx');
+						}
+					}
+				}
+
+				// now delete all generated files
+				if (exists('$assets/Standard Assets/Haxe-Std'))
+					deleteAll('$assets/Standard Assets/Haxe-Std',true);
+				if (exists('$assets/Standard Assets/Editor/unihx'))
+					deleteAll('$assets/Standard Assets/Editor/unihx',true);
+				deleteCompiled(assets);
 			} else {
 				err('Cancelled by the user');
 			}
+		}
+	}
+
+	private function deleteCompiled(assets:String)
+	{
+		for (file in readDirectory(assets))
+		{
+			if (file == 'hx-compiled')
+				deleteAll('$assets/hx-compiled',true);
+			else if (file == 'hx-compiled.meta')
+				deleteFile('$assets/$file');
+			else if (isDirectory('$assets/$file'))
+				deleteCompiled('$assets/$file');
 		}
 	}
 
@@ -260,9 +303,9 @@ class InitCmd extends Cli
 
 		// copy assets to Editor Default Resources
 		if (exists(assets + '/Editor Default Resources/Unihx'))
-			deleteAll(assets + '/Editor Default Resources/Unihx');
+			deleteAll(assets + '/Editor Default Resources/Unihx',false);
 		if (exists(assets + '/Editor Default Resources/unihx'))
-			deleteAll(assets + '/Editor Default Resources/unihx');
+			deleteAll(assets + '/Editor Default Resources/unihx',false);
 
 		createDirectory(assets + '/Editor Default Resources/Unihx');
 		var unihx = this.getUnihxPath() + "/extra/assets/icons";

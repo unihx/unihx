@@ -3,8 +3,10 @@ package unihx.pvt.compiler;
 import Std.*;
 import sys.io.Process;
 import sys.FileSystem.*;
-import unityengine.*;
 import unihx.pvt.IMessageContainer;
+#if cs
+import unityengine.*;
+#end
 
 using StringTools;
 
@@ -181,23 +183,29 @@ using StringTools;
 		var ret = true;
 		if (cmd != null)
 		{
+#if cs
 			var sw = new cs.system.diagnostics.Stopwatch();
 			sw.Start();
+#end
 			if (cmd.exit != 0)
 			{
 				ret = false;
 				error('Haxe compilation failed');
 			}
+
+#if cs
 			sw.Stop();
 			if (verbose)
 			{
 				Debug.Log('Compilation ended (' + sw.Elapsed.Seconds + "." + sw.Elapsed.Milliseconds + ")" );
 			}
+#end
+
 			for (ln in cmd.out.split('\n'))
 			{
 				var ln = ln.trim();
 				if (ln != "")
-					Debug.Log(ln);
+					haxe.Log.trace(ln,null);
 			}
 			for (ln in cmd.err.split('\n'))
 			{
@@ -212,7 +220,11 @@ using StringTools;
 							line = errRegex.matched(2);
 					message = errRegex.matchedRight().trim();
 					var other = errRegex.matched(3);
+#if cs
 					var path = cs.system.io.Path.GetFullPath(cs.system.io.Path.Combine("Assets",file));
+#else
+					var path = sys.FileSystem.fullPath('Assets/$file');
+#end
 					var col = 0;
 					if (colRegex.match(other))
 						col = Std.parseInt(colRegex.matched(1));
