@@ -1,4 +1,4 @@
-package unihx.compiler;
+package unihx.pvt.macros;
 import haxe.macro.Expr;
 
 class StructHelper

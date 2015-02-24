@@ -1,5 +1,4 @@
 package unihx.pvt.macros;
-#if macro
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxe.macro.Context.*;
@@ -8,11 +7,9 @@ import sys.FileSystem.*;
 using haxe.macro.Tools;
 using StringTools;
 using Lambda;
-#end
 
 class InspectorMacro
 {
-#if macro
 	public static function createInspectorIfNeeded(fields:Array<Field>, cl:Ref<ClassType>)
 	{
 		var cl2 = cl.get();
@@ -865,4 +862,3 @@ class InspectorCall
 	}
 
 }
-#end

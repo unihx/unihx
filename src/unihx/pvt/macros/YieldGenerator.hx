@@ -574,7 +574,7 @@ class YieldGenerator
 		var pack = pack.split('.'),
 				name = "yield_" + (infos != null ? infos.className.split('.').pop() + "_" + infos.methodName + "_" + infos.lineNumber + "_": "" + clsnum);
 
-		var cls = macro class extends unihx.compiler.YieldBlockBase {
+		var cls = macro class extends unihx.utils.YieldBlockBase {
 			override public function MoveNext():Bool
 				$eswitch;
 		};
