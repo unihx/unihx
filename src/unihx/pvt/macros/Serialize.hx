@@ -22,6 +22,18 @@ class Serialize
 	public static function addSerIfNeeded(fields:Array<Field>, cl:Ref<ClassType>, force=false):Null<Array<Field>>
 	{
 		// check if any of the fields' types need serialization
+		var cl2 = cl.get();
+		if (cl2.isExtern)
+		{
+			if (force)
+				return fields.concat((macro class {
+					public function OnAfterDeserialize() {}
+					public function OnBeforeSerialize() {}
+				}).fields);
+			else
+				return null;
+		}
+
 		var typedFields = [];
 		for (f in fields)
 		{
@@ -38,7 +50,7 @@ class Serialize
 					var type = if (t == null) typeof(e); else typeof(macro @:pos(f.pos) ( $expr : $t ));
 					if (needsSerialization(type,f.pos))
 					{
-						typedFields.push({ field:f.name, type:type });
+						typedFields.push(f.name);
 						if (f.meta == null)
 							f.meta = [];
 						f.meta.push({ name:':meta', params: [macro System.NonSerialized], pos:f.pos });
@@ -47,9 +59,74 @@ class Serialize
 			}
 		}
 		// check if the super types either need serialization or already implemented the ISerializationCallbackReceiver interface
+		var sup = cl2.superClass;
+		if (sup != null)
+		{
+			if (!TInst(sup.t,sup.params).unify(getType('unityengine.ISerializationCallbackReceiver')))
+			{
+				while (sup != null)
+				{
+					var c = sup.t.get();
+					if (c.isExtern && !c.meta.has(':hxGen'))
+						break;
+
+					for (field in c.fields.get())
+					{
+						var isVar = field.meta.has(':isVar');
+						switch [ field.kind, isVar ]
+						{
+							case [ FVar(AccNormal | AccNo,_), _ ],
+							     [ FVar(_, AccNormal | AccNo), _ ],
+							     [ FVar(_,_), true ] if (needsSerialization(field.type, field.pos)):
+								typedFields.push(field.name);
+								field.meta.add(':meta', [ macro System.NonSerialized ], field.pos );
+							case _:
+						}
+					}
+				}
+			}
+		}
 
 		// if we don't need any special serialization, just return the objects
+		if (typedFields.length == 0)
+		{
+			if (force)
+				return fields.concat((macro class {
+					public function OnAfterDeserialize() {}
+					public function OnBeforeSerialize() {}
+				}).fields);
+			else
+				return null;
+		}
+
+		var pos = currentPos();
 		// otherwise create OnBeforeSerialize / OnAfterSerialize
+		var decl = { expr:EObjectDecl([ for(field in typedFields) { field: field, expr: macro this.$field } ]), pos: pos };
+		var block = [ for (field in typedFields) macri this.$field = obj.$field ];
+
+		var serFields = macro class {
+			var __hx_serialize_string:String;
+			var __hx_serialize_objects:cs.NativeArray<unityengine.Object>;
+
+			public function OnBeforeSerialize()
+			{
+				var o = $decl;
+				var res = unihx.utils.UnitySerializer.run(o);
+				this.__hx_serialize_string = res.toString();
+				this.__hx_serialize_objects = res.getObjects();
+			}
+
+			public function OnAfterDeserialize()
+			{
+				if (this.__hx_serialize_string != null)
+				{
+					var obj = unihx.utils.UnityUnserializer.run(this.__hx_serialize_string, this.__hx_serialize_objects);
+					$b{block};
+				}
+			}
+		};
+
+		return fields.concat(serFields.field);
 	}
 
 	private static function needsSerialization(type:Type, pos:Position)

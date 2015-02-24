@@ -30,8 +30,6 @@ class UnitySerializer extends haxe.Serializer {
 	public static function run(v:Dynamic) {
 		var s = new UnitySerializer();
 		s.serialize(v);
-		return { str : s.toString()
-			   , objs: cs.Lib.nativeArray(s.unityObjects, true)
-			   }
+		return s;
 	}
 }

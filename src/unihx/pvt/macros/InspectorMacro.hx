@@ -210,7 +210,6 @@ class InspectorMacro
 		return typeof( { expr:ECheckType(macro cast null, c), pos:pos } );
 	}
 
-#end
 
 #if false
 	macro public static function prop(ethis:Expr, efield:Expr)
@@ -254,7 +253,6 @@ class InspectorMacro
 #end
 }
 
-#if macro
 class InspectorCall
 {
 	var block:Array<Expr>;
