@@ -24,6 +24,7 @@ class Utils
 #end
 			var out = proc.stdout.readAll().toString();
 			var exit = proc.exitCode();
+			while (err == null) Sys.sleep(0.1);
 			return { exit:exit, out:out, err:err };
 		}
 		catch(e:Dynamic) {

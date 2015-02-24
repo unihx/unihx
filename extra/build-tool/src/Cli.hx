@@ -190,7 +190,20 @@ class BuildCmd extends Cli
 		hxml.reload();
 		var passes = new CompPasses(assets);
 		var compiler = new HaxeCompiler();
-		if (!passes.compile(true,compiler,hxml))
+		var succ = passes.compile(true,compiler,hxml);
+		for (msg in compiler.getMessages())
+		{
+			var str = msg.pos == null ? '' : (msg.pos.file + ": line " + msg.pos.line + ": col " + msg.pos.column + ": " + (msg.pos.rest == null ? '' : msg.pos.rest + ": ")) + msg.msg + '\n';
+			switch(msg.kind)
+			{
+				case Warning:
+					Sys.stderr().writeString('Warning: ' + str);
+				case _:
+					Sys.stderr().writeString(str);
+			}
+		}
+
+		if (!succ)
 			Sys.exit(3);
 	}
 }

@@ -205,7 +205,11 @@ using StringTools;
 			{
 				var ln = ln.trim();
 				if (ln != "")
-					haxe.Log.trace(ln,null);
+#if cs
+					unityengine.Debug.Log(ln);
+#else
+					Sys.println(ln);
+#end
 			}
 			for (ln in cmd.err.split('\n'))
 			{
@@ -223,7 +227,7 @@ using StringTools;
 #if cs
 					var path = cs.system.io.Path.GetFullPath(cs.system.io.Path.Combine("Assets",file));
 #else
-					var path = sys.FileSystem.fullPath('Assets/$file');
+					var path = file;
 #end
 					var col = 0;
 					if (colRegex.match(other))
