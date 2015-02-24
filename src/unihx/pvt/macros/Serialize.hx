@@ -62,6 +62,7 @@ class Serialize
 		var sup = cl2.superClass;
 		if (sup != null)
 		{
+			trace(getType('unityengine.ISerializationCallbackReceiver'));
 			if (!TInst(sup.t,sup.params).unify(getType('unityengine.ISerializationCallbackReceiver')))
 			{
 				while (sup != null)
