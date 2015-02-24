@@ -193,7 +193,7 @@ class BuildCmd extends Cli
 		var succ = passes.compile(true,compiler,hxml);
 		for (msg in compiler.getMessages())
 		{
-			var str = msg.pos == null ? '' : (msg.pos.file + ": line " + msg.pos.line + ": col " + msg.pos.column + ": " + (msg.pos.rest == null ? '' : msg.pos.rest + ": ")) + msg.msg + '\n';
+			var str = (msg.pos == null ? '' : (msg.pos.file + ": line " + msg.pos.line + ": col " + msg.pos.column + ": " + (msg.pos.rest == null ? '' : msg.pos.rest + ": "))) + msg.msg + '\n';
 			switch(msg.kind)
 			{
 				case Warning:

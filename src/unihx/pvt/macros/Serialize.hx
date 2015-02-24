@@ -27,8 +27,8 @@ class Serialize
 		{
 			if (force)
 				return fields.concat((macro class {
-					public function OnAfterDeserialize() {}
-					public function OnBeforeSerialize() {}
+					@:overload public function OnAfterDeserialize() {}
+					@:overload public function OnBeforeSerialize() {}
 				}).fields);
 			else
 				return null;
@@ -42,12 +42,12 @@ class Serialize
 
 			var isVar = f.meta == null ? false : f.meta.exists(function(v) return v.name == ':isVar');
 			switch [ f.kind, isVar ] {
-				case [ FVar(e,t), _ ],
-				     [ FProp(e,t,'default' | 'null',_), _ ],
-					   [ FProp(e,t,_,'default' | 'null'), _ ],
-					   [ FProp(e,t,_,_), true ]:
+				case [ FVar(t,e), _ ],
+				     [ FProp('default' | 'null',_,t,e), _ ],
+					   [ FProp(_,'default' | 'null',t,e), _ ],
+					   [ FProp(_,_,t,e), true ]:
 					var expr = if (e == null) macro @:pos(f.pos) cast null else e;
-					var type = if (t == null) typeof(e); else typeof(macro @:pos(f.pos) ( $expr : $t ));
+					var type = if (t == null) typeof(expr); else typeof(macro @:pos(f.pos) ( $expr : $t ));
 					if (needsSerialization(type,f.pos))
 					{
 						typedFields.push(f.name);
@@ -92,8 +92,8 @@ class Serialize
 		{
 			if (force)
 				return fields.concat((macro class {
-					public function OnAfterDeserialize() {}
-					public function OnBeforeSerialize() {}
+					@:overload public function OnAfterDeserialize() {}
+					@:overload public function OnBeforeSerialize() {}
 				}).fields);
 			else
 				return null;
@@ -102,13 +102,13 @@ class Serialize
 		var pos = currentPos();
 		// otherwise create OnBeforeSerialize / OnAfterSerialize
 		var decl = { expr:EObjectDecl([ for(field in typedFields) { field: field, expr: macro this.$field } ]), pos: pos };
-		var block = [ for (field in typedFields) macri this.$field = obj.$field ];
+		var block = [ for (field in typedFields) macro this.$field = obj.$field ];
 
 		var serFields = macro class {
 			var __hx_serialize_string:String;
 			var __hx_serialize_objects:cs.NativeArray<unityengine.Object>;
 
-			public function OnBeforeSerialize()
+			@:overload public function OnBeforeSerialize()
 			{
 				var o = $decl;
 				var res = unihx.utils.UnitySerializer.run(o);
@@ -116,7 +116,7 @@ class Serialize
 				this.__hx_serialize_objects = res.getObjects();
 			}
 
-			public function OnAfterDeserialize()
+			@:overload public function OnAfterDeserialize()
 			{
 				if (this.__hx_serialize_string != null)
 				{
@@ -125,8 +125,9 @@ class Serialize
 				}
 			}
 		};
+		trace(serFields);
 
-		return fields.concat(serFields.field);
+		return fields.concat(serFields.fields);
 	}
 
 	private static function needsSerialization(type:Type, pos:Position)
@@ -140,7 +141,7 @@ class Serialize
 			case TFun(_,_):
 				warning('A function can never be serialized. Please add `@:skip` or `@:skipSerialization` to eliminate this warning', pos);
 				false;
-			case TAbstract(a,tl) if (a.get().meta.exists(function(m) return m.name == ':coreType')):
+			case TAbstract(a,tl) if (a.get().meta.has(':coreType')):
 				// all core types can be handled correctly by the unity serializer
 				false;
 			case TAbstract(a,tl):
