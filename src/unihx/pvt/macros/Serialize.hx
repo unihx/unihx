@@ -62,7 +62,6 @@ class Serialize
 		var sup = cl2.superClass;
 		if (sup != null)
 		{
-			trace(getType('unityengine.ISerializationCallbackReceiver'));
 			if (!TInst(sup.t,sup.params).unify(getType('unityengine.ISerializationCallbackReceiver')))
 			{
 				while (sup != null)
@@ -84,6 +83,7 @@ class Serialize
 							case _:
 						}
 					}
+					sup = c.superClass;
 				}
 			}
 		}
@@ -126,7 +126,6 @@ class Serialize
 				}
 			}
 		};
-		trace(serFields);
 
 		return fields.concat(serFields.fields);
 	}

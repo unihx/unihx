@@ -26,12 +26,12 @@ class HaxeBehaviourBuild
 		}
 
 		// build serializer if needed
-		// var ser = Serialize.addSerIfNeeded(fields, cl, false);
-		// if (ser != null)
-		// {
-		// 	fields = ser;
-		// 	isEmpty = false;
-		// }
+		var ser = Serialize.addSerIfNeeded(fields, cl, false);
+		if (ser != null)
+		{
+			fields = ser;
+			isEmpty = false;
+		}
 
 		// build yield fields if needed
 

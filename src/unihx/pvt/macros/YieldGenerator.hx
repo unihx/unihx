@@ -751,9 +751,8 @@ class YieldGenerator
 
 	function alloc_var(name:String, t:Type):TVar
 	{
-		switch (typeExpr(macro var _).expr) {
+		switch (typeExpr(macro var $name).expr) {
 			case TVar(v,_):
-				v.name = name;
 				v.t = t;
 				return v;
 			case _: throw 'assert';
