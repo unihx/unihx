@@ -451,7 +451,8 @@ class YieldGenerator
 				{
 					switch (typeExpr( macro var _iterator_ ).expr) {
 						case TVar(v2,_):
-							v2.t = eit.t;
+							unify(v2.t,eit.t);
+							// v2.t = eit.t;
 							iter({ expr:TVar(v2,eit), t:tdynamic, pos:eit.pos });
 							var local = { expr:TLocal(v2), t:eit.t, pos:eit.pos };
 
@@ -753,7 +754,8 @@ class YieldGenerator
 	{
 		switch (typeExpr(macro var $name).expr) {
 			case TVar(v,_):
-				v.t = t;
+				unify(v.t,t);
+				// v.t = t;
 				return v;
 			case _: throw 'assert';
 		}
