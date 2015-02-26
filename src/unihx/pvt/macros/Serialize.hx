@@ -127,6 +127,15 @@ class Serialize
 			}
 		};
 
+		if (!force)
+			serFields.fields = serFields.fields.filter(function(v) return switch (v.kind) {
+				case FFun(_):
+					v.access.push(AOverride);
+					true;
+				case _:
+					false;
+			});
+
 		return fields.concat(serFields.fields);
 	}
 
