@@ -1,6 +1,6 @@
 package unityengine;
 
-@:autoBuild(unihx.pvt.macros.HaxeBehaviourBuild.build())
+// @:autoBuild(unihx.pvt.macros.HaxeBehaviourBuild.build())
 @:nativeChildren class HaxeBehaviour extends MonoBehaviour implements ISerializationCallbackReceiver
 {
 	@:protected var __hx_serialize_string:String;
