@@ -6,7 +6,7 @@ Unity-Haxe tools. Compile to Unity3D from Haxe.
 Make Haxe be a first-class Unity development language, and make it easier to work with Haxe on Unity than the natively supported Unity languages
 
 ## Getting started
-Use `haxelib git unihx https://github.com/waneck/unihx.git` to install it.
+Use `haxelib git unihx https://github.com/unihx/unihx.git` to install it.
 
 On an existing Unity project, run `haxelib run unihx init path/to/unity/proj`. Beware that you currently need a Haxe nightly build to be able to compile and use this library correctly.
 
@@ -20,7 +20,7 @@ You can see a demonstration of some of its features at http://waneck.github.io/w
  * Extend MonoBehaviour and code like you would with other Unity languages. Be sure to check the wwx presentation to get an idea of the types equivalence (e.g. C#'s array are cs.NativeArray in Haxe)
  * Use the `@:nativeGen` metadata to generate very clean code
  * Error positions always shown in the .hx code
- * Operator overloading on core structures like Vector2, Vector3, Matrix4x4, Quaternion, etc. See more about it at [Core Structures](https://github.com/waneck/unihx/wiki/Core-Structures)
+ * Operator overloading on core structures like Vector2, Vector3, Matrix4x4, Quaternion, etc. See more about it at [Core Structures](https://github.com/unihx/unihx/wiki/Core-Structures)
  
 ## What still needs work
  * The HaxeBehaviour class is available, but some of its features demonstrated were proof-of-concept and are currently only accessible through the development branch.
