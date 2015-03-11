@@ -14,17 +14,72 @@ class InspectorMacro
 	{
 		var cl2 = cl.get();
 		var isUnity = TInst(cl, [ for (tp in cl2.params) getType('Dynamic') ]).unify(getType('unityengine.Object'));
+		if (cl2.params.length > 0) return; //FIXME: deal with type parameters too
 		if (!isUnity) return;
 		//check if there is any type that may need
+		//for now, all inspectors are built
+		if (!cl2.meta.has(':skipInspector'))
+		{
+			var names = [ for (f in fields) f.name => true ];
+			names["new"] = true;
+			var mpack = cl2.module.split('.');
+			var mname = mpack.pop();
+			var tdef = TPath({ pack:mpack, name:mname, sub:cl2.name });
+			var ethis = macro (cast this.target : $tdef);
+			var nf = buildWithFields(fields, ethis, "__hx_gui");
+			var fields = nf.filter(function(f) return !names.exists(f.name));
+			for (f in fields)
+			{
+				if (f.name == "__hx_gui")
+				{
+					f.name = "OnInspectorGUI";
+					var meta = (macro class { @:overload function a() {} }).fields[0].meta;
+					f.meta = meta;
+					if (f.access == null) f.access = [];
+					f.access.push(AOverride);
+				}
+				// trace(f.name);
+				// switch(f.kind) { case FFun(f): trace(f.expr.toString()); case _: }
+			}
+
+			// [CustomEditor(typeof(LevelScript))]
+			var name = if (cl2.meta.has(':native')) switch (cl2.meta.extract(':native')[0].params) {
+				case [{ expr:EConst(CString(s)) }]:
+					s;
+				case _:
+					mname == cl2.name ? cl2.module : mpack.join('.') + (mpack.length == 0 ? '' : '.') + cl2.name;
+			} else
+				mname == cl2.name ? cl2.module : mpack.join('.') + (mpack.length == 0 ? '' : '.') + cl2.name;
+
+			var tExpr = parse(name, (macro {}).pos);
+			var meta = switch (macro @:meta(UnityEditor.CustomEditor(typeof($tExpr))) null).expr {
+				case EMeta(m,_):
+					m;
+				case _: throw 'assert';
+			};
+
+			var def = macro class X extends unityeditor.Editor {
+			};
+			def.pack = cl2.pack;
+			def.name = cl2.name + "_Editor";
+			def.meta = [meta];
+			def.fields = fields;
+
+			haxe.macro.Context.defineType(def);
+		}
 	}
 
 	public static function build(fieldName:Null<String>):Array<Field>
 	{
+		return buildWithFields(getBuildFields(), macro this, fieldName);
+	}
+
+	private static function buildWithFields(fields:Array<Field>, ethis:Expr, fieldName:Null<String>):Array<Field>
+	{
     if (defined('display'))
       return null;
 
-		var fields = getBuildFields(),
-				pos = currentPos();
+		var pos = currentPos();
 		var toRun = [];
 		for (f in fields)
 		{
@@ -75,7 +130,6 @@ class InspectorMacro
 			case TAnonymous(f):
 				var f = f.get();
 				var exprs = [];
-				var ethis= macro this;
 				var tfields = [for (f in f.fields) f.name => f];
 				for (fold in toRun)
 				{
@@ -363,6 +417,8 @@ class InspectorCall
 				if (field != null)
 					warning('Ignored field: Unsupported type. Please add @:skip to the field to avoid this warning', field.pos);
 			case TAnonymous(anon):
+				block.push(macro if($efield == null) $efield = cast {});
+				block.push(macro trace($efield));
 				var fields = anon.get().fields;
 				var lastEThis = ethis,
 						lastEField = efield,

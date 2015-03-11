@@ -57,14 +57,12 @@ class CompPasses
 			var skip = true;
 			for (pass in this)
 			{
-				// trace(pass.changedFiles);
 				if (pass.changedFiles.length != 0)
 				{
 					skip = false;
 					break;
 				}
 			}
-			// trace(skip);
 			if (skip) return false;
 		}
 
@@ -78,21 +76,27 @@ class CompPasses
 			if (changed.length > 0)
 				pass.changedFiles = [];
 
-			var canSkip = pass.fileCount == 0;
+			var canSkip = pass.fileCount == 0 && (!isEditor || toRemoveFiles.length == 0);
 			for (dll in pass.dlls)
 				dlls.push(dll);
 
 			if (canSkip) continue;
-			for (r in toRemoveFiles)
+			if (toRemoveFiles.length > 0)
 			{
 				curArgs.push('--macro');
-				curArgs.push('remove("$r")');
+				var remArg = [ for (r in toRemoveFiles) '"$r"' ].join(",");
+				curArgs.push('unihx.pvt.compiler.Compiler.excludePacks([$remArg])');
 			}
-			if (isEditor) for (r in toRemoveEditor)
-			{
-				curArgs.push('--macro');
-				curArgs.push('remove("$r")');
-			}
+			// for (r in toRemoveFiles)
+			// {
+			// 	curArgs.push('--macro');
+			// 	curArgs.push('remove("$r")');
+			// }
+			// if (isEditor) for (r in toRemoveEditor)
+			// {
+			// 	curArgs.push('--macro');
+			// 	curArgs.push('remove("$r")');
+			// }
 
 			if (changed.length == 0 && !hadErrors)
 				canSkip = true;
@@ -122,6 +126,7 @@ class CompPasses
 				args.push('-net-lib');
 				args.push(dll);
 			}
+			if (isEditor) { args.push('-D'); args.push('editor'); }
 			args = args.concat(curArgs);
 
 			//TODO add here support for compiling to a DLL using Temp/Unihx stash
@@ -141,27 +146,32 @@ class CompPasses
 
 	public function addSource(file:String)
 	{
-		getPass(file).addPath(file);
+		var pass = getPass(file);
+		if (pass != null) pass.addPath(file);
 	}
 
 	public function addDll(file:String)
 	{
-		getPass(file).addDll(file);
+		var pass = getPass(file);
+		if (pass != null) pass.addDll(file);
 	}
 
 	public function changedSource(file:String)
 	{
-		getPass(file).changePath(file);
+		var pass = getPass(file);
+		if (pass != null) pass.changePath(file);
 	}
 
 	public function deleteDll(file:String)
 	{
-		getPass(file).deleteDll(file);
+		var pass = getPass(file);
+		if (pass != null) pass.deleteDll(file);
 	}
 
 	public function deleteSource(file:String)
 	{
-		getPass(file).deletePath(file);
+		var pass = getPass(file);
+		if (pass != null) pass.deletePath(file);
 	}
 
 	@:allow(unihx.pvt.compiler) private function getPass(path:String)
@@ -181,7 +191,9 @@ class CompPasses
 				}
 			}
 		} else {
-			throw "TODO: " + fpath + " , " + basePath;
+			trace(fpath,' is not on the base path ',basePath);
+			return null;
+			// throw "TODO: " + fpath + " , " + basePath;
 		}
 
 		var p2 = path.toLowerCase().replace('\\','/');

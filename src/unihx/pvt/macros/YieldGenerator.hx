@@ -127,6 +127,26 @@ class YieldGenerator
 		}
 	}
 
+	public static function addYieldIfNeeded(fields:Array<Field>, cl:Ref<ClassType>)
+	{
+		var didRun = false;
+		for (field in fields)
+		{
+			switch(field.kind)
+			{
+				case FFun(f) if (field.meta != null && field.meta.exists(function(e) return e.name == 'yield') && f.expr != null):
+					didRun = true;
+					var expr = f.expr;
+					f.expr = macro @:pos(expr.pos) return unihx.utils.Yield.make($expr);
+				case _:
+			}
+		}
+		if (didRun)
+			return fields;
+		else
+			return null;
+	}
+
 	public static function make(pack,e:Expr):Expr
 	{
 		return new YieldGenerator(pack,e).change();

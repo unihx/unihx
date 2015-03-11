@@ -28,6 +28,7 @@ class MetaHandler
 	{
 		var fromPass = passes.getPass(from),
 		    toPass = passes.getPass(to);
+		if (fromPass == null || toPass == null) return;
 		var fullFrom = fullPath(from),
 		    fullTo = fullPath(to);
 		var oldModule = fromPass.fileMap[fullFrom],

@@ -2,15 +2,10 @@ package unihx.utils;
 
 class Yield
 {
-	macro public static function block(e:haxe.macro.Expr):haxe.macro.Expr
+	macro public static function make(e:haxe.macro.Expr):haxe.macro.Expr
 	{
-		var ret = YieldGenerator.getIterator(e);
-		return macro ( $ret : unihx.utils.YieldBlockBase );
-	}
-
-	// only typing helper
-	private static function __yield__<T>(t:T):T
-	{
-		return t;
+		var c2 = haxe.macro.Context.getLocalClass().get(),
+		    pack = c2.pack;
+		return unihx.pvt.macros.YieldGenerator.make(pack,e);
 	}
 }

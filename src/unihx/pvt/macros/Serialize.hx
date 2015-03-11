@@ -37,7 +37,7 @@ class Serialize
 		var typedFields = [];
 		for (f in fields)
 		{
-			if (f.meta.exists(function(m) return m.name == ":skip" || m.name == ":skipSerialization"))
+			if (f.meta != null && f.meta.exists(function(m) return m.name == ":skip" || m.name == ":skipSerialization"))
 				continue;
 
 			var isVar = f.meta == null ? false : f.meta.exists(function(v) return v.name == ':isVar');
@@ -106,8 +106,8 @@ class Serialize
 		var block = [ for (field in typedFields) macro this.$field = obj.$field ];
 
 		var serFields = macro class {
-			var __hx_serialize_string:String;
-			var __hx_serialize_objects:cs.NativeArray<unityengine.Object>;
+			@:protected @:noCompletion var __hx_serialize_string:String;
+			@:protected @:noCompletion var __hx_serialize_objects:cs.NativeArray<unityengine.Object>;
 
 			@:overload public function OnBeforeSerialize()
 			{
@@ -158,11 +158,12 @@ class Serialize
 				needsSerialization(type.applyTypeParameters(a.params, tl), pos);
 			case type = TInst( cl, p ):
 				var cl = cl.get();
-				switch (cl.pack)
+				switch [cl.pack, cl.name]
 				{
-					case ['unityengine' | 'unityeditor']:
+					case [['unityengine' | 'unityeditor'], _]:
 						false;
-					case ['cs'] if (cl.name == 'NativeArray'):
+					case [['cs'], 'NativeArray']
+					   | [[], 'String']:
 						false;
 					case _:
 						var obj = getType('unityengine.Object');

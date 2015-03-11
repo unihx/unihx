@@ -30,6 +30,7 @@ class UnitySerializer extends haxe.Serializer {
 	public static function run(v:Dynamic) {
 		var s = new UnitySerializer();
 		s.serialize(v);
+		trace(s);
 		return s;
 	}
 }

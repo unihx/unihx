@@ -14,8 +14,9 @@ class HaxeBehaviourBuild
 		    cl = getLocalClass();
 		var isEmpty = true;
 #if editor
+		trace("testing inspector create");
 		// build inspector if -D editor
-		InspectorMacro.createInspectorIfNeeded(fields,cl);
+		InspectorMacro.createInspectorIfNeeded(fields, cl);
 #end
 		// add default values if needed
 		var def = DefaultValues.defaultValues(fields, false);
@@ -34,6 +35,12 @@ class HaxeBehaviourBuild
 		}
 
 		// build yield fields if needed
+		var yieldf = YieldGenerator.addYieldIfNeeded(fields, cl);
+		if (yieldf != null)
+		{
+			fields = yieldf;
+			isEmpty = false;
+		}
 
 		return isEmpty ? null : fields;
 	}
