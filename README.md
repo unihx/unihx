@@ -1,3 +1,7 @@
+## Attention: This project is not being actively developed anymore.
+
+If you are interested in maintaining it, please send me an email: waneck at gmail.
+
 ![unihx logo](/extra/assets/unihx_logo_complete.png?raw=true)
 
 Unity-Haxe tools. Compile to Unity3D from Haxe.
